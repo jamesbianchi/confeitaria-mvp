@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Confeitaria — Painel</title>
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/components.css" />
+</head>
+<body>
+
+  <div class="layout">
+
+    <!-- ===== MENU LATERAL ===== -->
+    <aside class="sidebar">
+      <div class="logo">🍬 Confeitaria</div>
+      <nav>
+        <a href="index.html" class="active">🏠 Início</a>
+        <a href="pages/pedidos.html">📋 Pedidos</a>
+        <a href="pages/agenda.html">📅 Agenda</a>
+        <a href="pages/clientes.html">👤 Clientes</a>
+        <a href="pages/cardapio.html">🍫 Cardápio</a>
+        <a href="pages/financeiro.html">💰 Financeiro</a>
+      </nav>
+    </aside>
+
+    <!-- ===== CONTEÚDO PRINCIPAL ===== -->
+    <main class="main-content">
+      <h1 class="page-title">Painel de controle</h1>
+
+      <!-- Resumo do dia -->
+      <div class="summary-grid">
+        <div class="card summary-card">
+          <div class="summary-label">Pedidos hoje</div>
+          <div class="summary-value" id="pedidos-hoje">—</div>
+        </div>
+        <div class="card summary-card">
+          <div class="summary-label">Entregas esta semana</div>
+          <div class="summary-value" id="entregas-semana">—</div>
+        </div>
+        <div class="card summary-card">
+          <div class="summary-label">A receber (mês)</div>
+          <div class="summary-value" id="a-receber">—</div>
+        </div>
+        <div class="card summary-card">
+          <div class="summary-label">Faturado (mês)</div>
+          <div class="summary-value" id="faturado-mes">—</div>
+        </div>
+      </div>
+
+      <!-- Próximas entregas -->
+      <div class="card" style="margin-top: 24px;">
+        <h2 class="section-title">Próximas entregas</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Data</th>
+              <th>Itens</th>
+              <th>Status</th>
+              <th>Pagamento</th>
+            </tr>
+          </thead>
+          <tbody id="proximas-entregas">
+            <tr><td colspan="5" class="empty-state">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </main>
+  </div>
+
+  <script type="module" src="js/index.js"></script>
+</body>
+</html>

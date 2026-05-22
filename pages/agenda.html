@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Agenda — Confeitaria</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <style>
+    .calendario-nav {
+      display: flex; align-items: center; gap: 16px; margin-bottom: 24px;
+    }
+    .calendario-nav h2 {
+      font-size: 18px; font-weight: 500; min-width: 200px; text-align: center;
+    }
+    .calendario-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+    .calendario-header {
+      text-align: center; font-size: 11px; font-weight: 500;
+      color: #888; padding: 6px 0; text-transform: uppercase;
+    }
+    .dia-cell {
+      min-height: 80px; padding: 6px;
+      background: #fff; border: 0.5px solid #e0dfd8;
+      border-radius: 8px; cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .dia-cell:hover { border-color: #1a1a18; }
+    .dia-cell.vazio { background: #fafaf8; cursor: default; }
+    .dia-cell.hoje  { border-color: #1D9E75; border-width: 1.5px; }
+    .dia-cell.lotado{ background: #fef2f2; border-color: #E24B4A; }
+    .dia-cell.cheio { background: #fff8e1; border-color: #f59e0b; }
+    .dia-numero {
+      font-size: 13px; font-weight: 500; color: #1a1a18; margin-bottom: 4px;
+    }
+    .dia-pedidos {
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .dia-tag {
+      font-size: 10px; padding: 1px 5px; border-radius: 3px;
+      background: #e8f4fd; color: #1a73e8;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .dia-tag.em_producao { background: #fff8e1; color: #92400e; }
+    .dia-tag.pronto      { background: #f3e8ff; color: #7c3aed; }
+    .dia-tag.entregue    { background: #f0fdf4; color: #166534; }
+    .dia-mais {
+      font-size: 10px; color: #888; margin-top: 2px;
+    }
+    .legenda {
+      display: flex; gap: 16px; flex-wrap: wrap;
+      margin-top: 16px; font-size: 12px; color: #666;
+    }
+    .legenda-item { display: flex; align-items: center; gap: 6px; }
+    .legenda-cor {
+      width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0;
+    }
+
+    /* Painel lateral de detalhes do dia */
+    .detalhe-dia {
+      display: none; margin-top: 24px;
+    }
+    .detalhe-dia.open { display: block; }
+    .detalhe-header {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 12px;
+    }
+
+    @media (max-width: 768px) {
+      .calendario-grid { grid-template-columns: repeat(7, 1fr); gap: 3px; }
+      .dia-cell { min-height: 50px; padding: 4px; }
+      .dia-tag  { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="layout">
+
+    <aside class="sidebar">
+      <div class="logo">🍬 Confeitaria</div>
+      <nav>
+        <a href="../index.html">🏠 Início</a>
+        <a href="pedidos.html">📋 Pedidos</a>
+        <a href="agenda.html" class="active">📅 Agenda</a>
+        <a href="clientes.html">👤 Clientes</a>
+        <a href="cardapio.html">🍫 Cardápio</a>
+        <a href="financeiro.html">💰 Financeiro</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+
+      <div class="page-header">
+        <h1 class="page-title">Agenda</h1>
+        <button class="btn btn-outline" onclick="abrirConfigurarCapacidade()">
+          ⚙️ Configurar capacidade
+        </button>
+      </div>
+
+      <!-- Navegação do calendário -->
+      <div class="calendario-nav">
+        <button class="btn btn-outline" onclick="mudarMes(-1)">← Anterior</button>
+        <h2 id="mes-titulo"></h2>
+        <button class="btn btn-outline" onclick="mudarMes(1)">Próximo →</button>
+      </div>
+
+      <!-- Calendário -->
+      <div class="card" style="padding: 16px">
+        <div class="calendario-grid" id="calendario-header">
+          <div class="calendario-header">Dom</div>
+          <div class="calendario-header">Seg</div>
+          <div class="calendario-header">Ter</div>
+          <div class="calendario-header">Qua</div>
+          <div class="calendario-header">Qui</div>
+          <div class="calendario-header">Sex</div>
+          <div class="calendario-header">Sáb</div>
+        </div>
+        <div class="calendario-grid" id="calendario-grid" style="margin-top:6px"></div>
+
+        <div class="legenda">
+          <div class="legenda-item">
+            <div class="legenda-cor" style="background:#fff;border:1.5px solid #1D9E75"></div>
+            Hoje
+          </div>
+          <div class="legenda-item">
+            <div class="legenda-cor" style="background:#fff8e1;border:0.5px solid #f59e0b"></div>
+            Quase no limite
+          </div>
+          <div class="legenda-item">
+            <div class="legenda-cor" style="background:#fef2f2;border:0.5px solid #E24B4A"></div>
+            Lotado
+          </div>
+        </div>
+      </div>
+
+      <!-- Detalhe do dia clicado -->
+      <div class="card detalhe-dia" id="detalhe-dia">
+        <div class="detalhe-header">
+          <h2 class="section-title" id="detalhe-titulo" style="margin:0"></h2>
+          <button class="btn btn-outline" onclick="fecharDetalhe()">Fechar</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Itens</th>
+              <th>Valor</th>
+              <th>Status</th>
+              <th>Entrega</th>
+            </tr>
+          </thead>
+          <tbody id="detalhe-lista"></tbody>
+        </table>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Modal configurar capacidade -->
+  <div class="modal-overlay" id="modal-capacidade">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header">
+        <span class="modal-title">Configurar capacidade</span>
+        <button class="modal-close" onclick="fecharCapacidade()">×</button>
+      </div>
+      <p style="font-size:13px;color:#666;margin-bottom:16px">
+        Define quantos pedidos você aceita por dia. O padrão é 3.
+        Para datas específicas (ex: feriados), configure individualmente.
+      </p>
+      <div class="form-group">
+        <label>Data</label>
+        <input type="date" id="cap-data" />
+      </div>
+      <div class="form-group">
+        <label>Limite de pedidos neste dia</label>
+        <input type="number" id="cap-limite" min="0" max="99" value="3" />
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="fecharCapacidade()">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarCapacidade()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script type="module" src="../js/agenda.js"></script>
+</body>
+</html>

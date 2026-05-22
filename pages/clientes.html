@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Clientes — Confeitaria</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+</head>
+<body>
+
+  <div class="layout">
+
+    <!-- ===== MENU LATERAL ===== -->
+    <aside class="sidebar">
+      <div class="logo">🍬 Confeitaria</div>
+      <nav>
+        <a href="../index.html">🏠 Início</a>
+        <a href="pedidos.html">📋 Pedidos</a>
+        <a href="agenda.html">📅 Agenda</a>
+        <a href="clientes.html" class="active">👤 Clientes</a>
+        <a href="cardapio.html">🍫 Cardápio</a>
+        <a href="financeiro.html">💰 Financeiro</a>
+      </nav>
+    </aside>
+
+    <!-- ===== CONTEÚDO ===== -->
+    <main class="main-content">
+
+      <div class="page-header">
+        <h1 class="page-title">Clientes</h1>
+        <button class="btn btn-primary" onclick="abrirModal()">+ Novo cliente</button>
+      </div>
+
+      <!-- Filtro -->
+      <div class="filters">
+        <input type="text" id="busca"
+          placeholder="Buscar por nome ou telefone..."
+          oninput="filtrar()" />
+      </div>
+
+      <!-- Tabela -->
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Telefone</th>
+              <th>Endereço</th>
+              <th>Pedidos</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="lista-clientes">
+            <tr><td colspan="5" class="empty-state">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ===== MODAL ===== -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="modal-titulo">Novo cliente</span>
+        <button class="modal-close" onclick="fecharModal()">×</button>
+      </div>
+
+      <input type="hidden" id="cliente-id" />
+
+      <div class="form-group">
+        <label>Nome completo *</label>
+        <input type="text" id="cliente-nome" placeholder="Ex: Maria Silva" />
+      </div>
+      <div class="form-group">
+        <label>Telefone / WhatsApp *</label>
+        <input type="text" id="cliente-telefone" placeholder="Ex: (21) 99999-9999" />
+      </div>
+      <div class="form-group">
+        <label>Endereço de entrega</label>
+        <textarea id="cliente-endereco" rows="2"
+          placeholder="Ex: Rua das Flores, 123 — Copacabana"></textarea>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="fecharModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarCliente()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal histórico de pedidos -->
+  <div class="modal-overlay" id="modal-historico">
+    <div class="modal" style="max-width:620px">
+      <div class="modal-header">
+        <span class="modal-title" id="historico-titulo">Histórico de pedidos</span>
+        <button class="modal-close" onclick="fecharHistorico()">×</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Data entrega</th>
+            <th>Valor</th>
+            <th>Status</th>
+            <th>Pagamento</th>
+          </tr>
+        </thead>
+        <tbody id="lista-historico">
+          <tr><td colspan="4" class="empty-state">Carregando...</td></tr>
+        </tbody>
+      </table>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="fecharHistorico()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script type="module" src="../js/clientes.js"></script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cardápio — Confeitaria</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+</head>
+<body>
+
+  <div class="layout">
+
+    <!-- ===== MENU LATERAL ===== -->
+    <aside class="sidebar">
+      <div class="logo">🍬 Confeitaria</div>
+      <nav>
+        <a href="../index.html">🏠 Início</a>
+        <a href="pedidos.html">📋 Pedidos</a>
+        <a href="agenda.html">📅 Agenda</a>
+        <a href="clientes.html">👤 Clientes</a>
+        <a href="cardapio.html" class="active">🍫 Cardápio</a>
+        <a href="financeiro.html">💰 Financeiro</a>
+      </nav>
+    </aside>
+
+    <!-- ===== CONTEÚDO ===== -->
+    <main class="main-content">
+
+      <div class="page-header">
+        <h1 class="page-title">Cardápio</h1>
+        <button class="btn btn-primary" onclick="abrirModal()">+ Novo produto</button>
+      </div>
+
+      <!-- Filtro -->
+      <div class="filters">
+        <input type="text" id="busca" placeholder="Buscar produto..." oninput="filtrar()" />
+        <select id="filtro-status" onchange="filtrar()">
+          <option value="todos">Todos</option>
+          <option value="ativo">Ativos</option>
+          <option value="inativo">Inativos</option>
+        </select>
+      </div>
+
+      <!-- Tabela de produtos -->
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th>Descrição</th>
+              <th>Preço base</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+
+          <tbody id="lista-produtos">
+            <tr><td colspan="5" class="empty-state">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Modal: novo/editar produto -->
+      <div id="modal-overlay" class="modal-overlay" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+          <div class="modal-header">
+            <h3 id="modal-titulo" class="modal-title">Novo produto</h3>
+            <button class="modal-close" onclick="fecharModal()" aria-label="Fechar">✕</button>
+          </div>
+
+          <div class="modal-body">
+            <input type="hidden" id="produto-id" />
+
+            <label for="produto-nome">Nome</label>
+            <input id="produto-nome" type="text" />
+
+            <label for="produto-descricao">Descrição</label>
+            <textarea id="produto-descricao" rows="3"></textarea>
+
+            <label for="produto-preco">Preço base</label>
+            <input id="produto-preco" type="number" step="0.01" min="0" />
+
+            <label for="produto-ativo">Ativo</label>
+            <select id="produto-ativo">
+              <option value="true">Sim</option>
+              <option value="false">Não</option>
+            </select>
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn" onclick="fecharModal()">Cancelar</button>
+            <button class="btn btn-primary" type="button" onclick="salvarProduto()">Salvar</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    </main>
+  </div>
+
+  <script type="module" src="../js/cardapio.js"></script>
+</body>
+</html>

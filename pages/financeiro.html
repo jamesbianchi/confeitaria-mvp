@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Financeiro — Confeitaria</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <style>
+    .resumo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .resumo-card {
+      text-align: center;
+      padding: 20px 16px;
+    }
+    .resumo-label {
+      font-size: 11px; color: #888; font-weight: 500;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+    .resumo-valor {
+      font-size: 22px; font-weight: 600; color: #1a1a18;
+    }
+    .resumo-valor.verde  { color: #1D9E75; }
+    .resumo-valor.vermelho { color: #E24B4A; }
+    .resumo-valor.amarelo { color: #f59e0b; }
+    .barra-pag {
+      height: 6px; border-radius: 3px;
+      background: #f0f0ee; margin-top: 10px; overflow: hidden;
+    }
+    .barra-pag-fill {
+      height: 100%; border-radius: 3px;
+      background: #1D9E75; transition: width 0.4s;
+    }
+    .nav-mes {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+    }
+    .nav-mes h2 {
+      font-size: 16px; font-weight: 500;
+      min-width: 160px; text-align: center;
+    }
+    .pag-badge {
+      display: inline-block; padding: 2px 8px;
+      border-radius: 4px; font-size: 11px; font-weight: 500;
+    }
+    .pag-pago     { background: #f0fdf4; color: #166534; }
+    .pag-sinal    { background: #fff8e1; color: #92400e; }
+    .pag-pendente { background: #fef2f2; color: #E24B4A; }
+  </style>
+</head>
+<body>
+
+  <div class="layout">
+
+    <aside class="sidebar">
+      <div class="logo">🍬 Confeitaria</div>
+      <nav>
+        <a href="../index.html">🏠 Início</a>
+        <a href="pedidos.html">📋 Pedidos</a>
+        <a href="agenda.html">📅 Agenda</a>
+        <a href="clientes.html">👤 Clientes</a>
+        <a href="cardapio.html">🍫 Cardápio</a>
+        <a href="financeiro.html" class="active">💰 Financeiro</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+
+      <h1 class="page-title">Financeiro</h1>
+
+      <!-- Navegação de mês -->
+      <div class="nav-mes">
+        <button class="btn btn-outline" onclick="mudarMes(-1)">← Anterior</button>
+        <h2 id="mes-titulo"></h2>
+        <button class="btn btn-outline" onclick="mudarMes(1)">Próximo →</button>
+      </div>
+
+      <!-- Cards de resumo -->
+      <div class="resumo-grid">
+        <div class="card resumo-card">
+          <div class="resumo-label">Total faturado</div>
+          <div class="resumo-valor" id="total-faturado">—</div>
+        </div>
+        <div class="card resumo-card">
+          <div class="resumo-label">Já recebido</div>
+          <div class="resumo-valor verde" id="total-recebido">—</div>
+        </div>
+        <div class="card resumo-card">
+          <div class="resumo-label">A receber</div>
+          <div class="resumo-valor amarelo" id="total-a-receber">—</div>
+        </div>
+        <div class="card resumo-card">
+          <div class="resumo-label">Pedidos no mês</div>
+          <div class="resumo-valor" id="total-pedidos">—</div>
+        </div>
+      </div>
+
+      <!-- Barra de recebimento -->
+      <div class="card" style="margin-bottom:24px">
+        <div style="display:flex;justify-content:space-between;
+          align-items:center;margin-bottom:8px">
+          <span style="font-size:13px;font-weight:500">
+            Progresso de recebimento
+          </span>
+          <span style="font-size:13px;color:#888" id="pct-recebido">0%</span>
+        </div>
+        <div class="barra-pag">
+          <div class="barra-pag-fill" id="barra-fill" style="width:0%"></div>
+        </div>
+      </div>
+
+      <!-- Filtro de status de pagamento -->
+      <div class="filters" style="margin-bottom:16px">
+        <select id="filtro-pag" onchange="filtrar()">
+          <option value="todos">Todos os pagamentos</option>
+          <option value="pendente">Pendentes</option>
+          <option value="sinal_recebido">Sinal recebido</option>
+          <option value="pago">Pagos</option>
+        </select>
+        <input type="text" id="busca-cliente"
+          placeholder="Buscar cliente..."
+          oninput="filtrar()" />
+      </div>
+
+      <!-- Tabela de pedidos do mês -->
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Entrega</th>
+              <th>Valor total</th>
+              <th>Sinal pago</th>
+              <th>Saldo</th>
+              <th>Pagamento</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody id="lista-financeiro">
+            <tr><td colspan="7" class="empty-state">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Modal registrar pagamento -->
+  <div class="modal-overlay" id="modal-pagamento">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header">
+        <span class="modal-title">Registrar pagamento</span>
+        <button class="modal-close" onclick="fecharPagamento()">×</button>
+      </div>
+      <p style="font-size:13px;color:#666;margin-bottom:16px"
+        id="pag-info"></p>
+
+      <input type="hidden" id="pag-pedido-id" />
+      <input type="hidden" id="pag-valor-total" />
+
+      <div class="form-group">
+        <label>Valor recebido (R$) *</label>
+        <input type="number" id="pag-valor" min="0" step="0.01" placeholder="0,00" />
+      </div>
+      <div class="form-group">
+        <label>Forma de pagamento *</label>
+        <select id="pag-forma">
+          <option value="pix">Pix</option>
+          <option value="ted">Transferência (TED)</option>
+          <option value="dinheiro">Dinheiro</option>
+          <option value="cartao">Cartão</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Tipo</label>
+        <select id="pag-tipo">
+          <option value="sinal">Sinal / Entrada</option>
+          <option value="saldo">Saldo final</option>
+          <option value="integral">Pagamento integral</option>
+        </select>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="fecharPagamento()">Cancelar</button>
+        <button class="btn btn-success" onclick="confirmarPagamento()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script type="module" src="../js/financeiro.js"></script>
+</body>
+</html>
