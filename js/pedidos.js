@@ -89,18 +89,10 @@ function renderizarTabela(lista) {
         ? '✅ Pago'
         : p.status_pagamento === 'sinal_recebido'
         ? `⚠️ Sinal (${formatarMoeda(p.sinal_pago)})`
-        : '❌ Pendente'}</td>
-      
-      /*
-      <td>
-        <button class="btn btn-outline" onclick="editarPedido('${p.id}')">
-          Editar
-        </button>
+        : '❌ Pendente'}
       </td>
-      */
-   
-      // o Código acima comentado foi substituído pelo bloco abaixo para incluir o botão de WhatsApp quando o pedido estiver confirmado.
-   
+
+     
       <td style="display:flex;gap:6px;flex-wrap:wrap">
             <button class="btn btn-outline" onclick="editarPedido('${p.id}')">
             Ver / Editar
