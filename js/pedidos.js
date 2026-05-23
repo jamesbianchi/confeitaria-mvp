@@ -90,11 +90,30 @@ function renderizarTabela(lista) {
         : p.status_pagamento === 'sinal_recebido'
         ? `⚠️ Sinal (${formatarMoeda(p.sinal_pago)})`
         : '❌ Pendente'}</td>
+      
+      /*
       <td>
         <button class="btn btn-outline" onclick="editarPedido('${p.id}')">
           Editar
         </button>
       </td>
+      */
+   
+      // o Código acima comentado foi substituído pelo bloco abaixo para incluir o botão de WhatsApp quando o pedido estiver confirmado.
+   
+      <td style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-outline" onclick="editarPedido('${p.id}')">
+            Ver / Editar
+            </button>
+            ${p.status === 'confirmado' ? `
+            <button class="btn btn-success"
+                onclick="enviarWhatsApp('${p.id}')">
+                📲 WhatsApp
+            </button>` : ''}
+        </td>
+
+
+
     </tr>
   `).join('')
 }
@@ -387,6 +406,82 @@ async function salvarPedido() {
   carregarDados()
 }
 
+
+// ===== ENVIAR CONFIRMAÇÃO VIA WHATSAPP / Incluído depois do MVP - FASE 2=====
+
+async function enviarWhatsApp(pedidoId) {
+  // Busca o pedido completo com cliente e itens
+  const { data: pedido } = await supabase
+    .from('pedidos')
+    .select(`
+      *,
+      clientes ( nome, telefone ),
+      itens_pedido (
+        quantidade, personalizacao, preco_unitario,
+        produtos ( nome )
+      )
+    `)
+    .eq('id', pedidoId)
+    .single()
+
+  if (!pedido) {
+    mostrarToast('Pedido não encontrado', 'error')
+    return
+  }
+
+  const cliente   = pedido.clientes
+  const itens     = pedido.itens_pedido || []
+  const saldo     = Number(pedido.valor_total) - Number(pedido.sinal_pago)
+
+  // Formata a data: "2024-12-28" → "28/12/2024"
+  const [ano, mes, dia] = pedido.data_entrega.split('-')
+  const dataFormatada = `${dia}/${mes}/${ano}`
+
+  // Monta a linha de cada item
+  const linhasItens = itens.map(i => {
+    const subtotal = Number(i.preco_unitario) * Number(i.quantidade)
+    const pers = i.personalizacao ? ` (${i.personalizacao})` : ''
+    return `• ${i.quantidade}x ${i.produtos?.nome}${pers} — ${formatarMoeda(subtotal)}`
+  }).join('\n')
+
+  // Monta a linha de entrega
+  const entrega = pedido.tipo_entrega === 'delivery'
+    ? '🛵 Entrega em seu endereço'
+    : '🏠 Retirada no local'
+
+  // Monta a linha de pagamento
+  const pagamento = pedido.sinal_pago > 0
+    ? `💵 Sinal pago: ${formatarMoeda(pedido.sinal_pago)}\n💳 Saldo restante: ${formatarMoeda(saldo)}`
+    : `💳 Total a pagar na entrega: ${formatarMoeda(pedido.valor_total)}`
+
+  // Monta a mensagem completa
+  const mensagem = `Olá ${cliente.nome.split(' ')[0]}! 😊
+
+Seu pedido foi *confirmado*! Aqui estão os detalhes:
+
+🍫 *Itens:*
+${linhasItens}
+
+📅 *Entrega:* ${dataFormatada}
+${entrega}
+
+💰 *Total:* ${formatarMoeda(pedido.valor_total)}
+${pagamento}
+
+${pedido.observacoes ? `📝 *Obs:* ${pedido.observacoes}\n\n` : ''}Qualquer dúvida é só chamar! 🍬`
+
+  // Limpa o telefone: remove tudo que não for número
+  // e garante o código do Brasil (+55)
+  const telefone = cliente.telefone.replace(/\D/g, '')
+  const telefoneFinal = telefone.startsWith('55')
+    ? telefone
+    : `55${telefone}`
+
+  // Monta o link do WhatsApp e abre em nova aba
+  const url = `https://wa.me/${telefoneFinal}?text=${encodeURIComponent(mensagem)}`
+  window.open(url, '_blank')
+}
+
 // ===== EXPOR FUNÇÕES AO HTML =====
 window.abrirModal            = abrirModal
 window.fecharModal           = fecharModal
@@ -398,6 +493,7 @@ window.removerItem           = removerItem
 window.atualizarItem         = atualizarItem
 window.atualizarStatusPagamento = atualizarStatusPagamento
 window.verificarCapacidade   = verificarCapacidade
+window.enviarWhatsApp = enviarWhatsApp   // Adicionado depois do MVP - FASE 2
 
 // ===== INICIALIZAR =====
 carregarDados()
