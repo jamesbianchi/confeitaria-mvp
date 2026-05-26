@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Entrar — Confeitaria</title>
+  <link rel="stylesheet" href="css/portal.css" />
+
+  <!-- Supabase carregado direto no head via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="navbar-logo">
+        <img src="imgs/logotipo.png" alt="Confeitaria" class="navbar-logo-img" />
+      </a>
+      <div class="navbar-actions">
+        <a href="index.html" class="navbar-link">← Voltar ao cardápio</a>
+      </div>
+    </div>
+  </nav>
+
+  <div style="min-height: calc(100vh - 64px); display:flex;
+    align-items:center; padding:40px 16px;">
+
+    <div class="form-card" style="width:100%">
+
+      <!-- Abas -->
+      <div style="display:flex; gap:0; margin-bottom:28px;
+        border-bottom: 2px solid var(--cor-borda);">
+        <button class="aba-btn aba-ativa" id="aba-login"
+          onclick="trocarAba('login')">Entrar</button>
+        <button class="aba-btn" id="aba-cadastro"
+          onclick="trocarAba('cadastro')">Criar conta</button>
+      </div>
+
+      <!-- LOGIN -->
+      <div id="form-login">
+        <p class="form-subtitulo">Bem-vindo de volta! 👋</p>
+
+        <div class="form-group">
+          <label for="login-email">E-mail</label>
+          <input type="email" id="login-email"
+            placeholder="seu@email.com" autocomplete="email" />
+          <span class="form-erro" id="erro-login-email"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="login-senha">Senha</label>
+          <input type="password" id="login-senha"
+            placeholder="Sua senha" autocomplete="current-password" />
+          <span class="form-erro" id="erro-login-senha"></span>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px">
+          <a href="#" onclick="esqueceuSenha()"
+            style="font-size:13px; color:var(--cor-primaria);
+            text-decoration:none;">
+            Esqueci minha senha
+          </a>
+          <a href="#" onclick="reenviarConfirmacao()"
+            style="font-size:13px; color:var(--cor-primaria);
+            text-decoration:none;">
+            Reenviar confirmação
+          </a>
+        </div>
+
+        <button class="btn btn-primary btn-full"
+          id="btn-login" onclick="fazerLogin()">
+          Entrar
+        </button>
+
+        <div class="form-divider"><span>ou</span></div>
+
+        <p style="text-align:center; font-size:14px;
+          color:var(--cor-texto-leve)">
+          Ainda não tem conta?
+          <a href="#" onclick="trocarAba('cadastro')"
+            style="color:var(--cor-primaria); font-weight:500;
+            text-decoration:none;">Criar agora</a>
+        </p>
+      </div>
+
+      <!-- CADASTRO -->
+      <div id="form-cadastro" style="display:none">
+        <p class="form-subtitulo">Crie sua conta e faça pedidos online 🍫</p>
+
+        <div class="form-group">
+          <label for="cad-nome">Nome completo</label>
+          <input type="text" id="cad-nome"
+            placeholder="Maria Silva" autocomplete="name" />
+          <span class="form-erro" id="erro-cad-nome"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="cad-email">E-mail</label>
+          <input type="email" id="cad-email"
+            placeholder="seu@email.com" autocomplete="email" />
+          <span class="form-erro" id="erro-cad-email"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="cad-telefone">WhatsApp (opcional)</label>
+          <input type="tel" id="cad-telefone"
+            placeholder="(21) 99999-9999" autocomplete="tel" />
+        </div>
+
+        <div class="form-group">
+          <label for="cad-senha">Senha</label>
+          <input type="password" id="cad-senha"
+            placeholder="Mínimo 6 caracteres"
+            autocomplete="new-password" />
+          <span class="form-erro" id="erro-cad-senha"></span>
+        </div>
+
+        <button class="btn btn-primary btn-full"
+          id="btn-cadastro" onclick="fazerCadastro()">
+          Criar conta
+        </button>
+
+        <div class="form-divider"><span>ou</span></div>
+
+        <p style="text-align:center; font-size:14px;
+          color:var(--cor-texto-leve)">
+          Já tem conta?
+          <a href="#" onclick="trocarAba('login')"
+            style="color:var(--cor-primaria); font-weight:500;
+            text-decoration:none;">Entrar</a>
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <style>
+    .aba-btn {
+      flex: 1; padding: 10px;
+      background: none; border: none;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px; font-weight: 500;
+      color: var(--cor-texto-leve);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.15s;
+    }
+    .aba-ativa {
+      color: var(--cor-primaria) !important;
+      border-bottom-color: var(--cor-primaria) !important;
+    }
+  </style>
+
+</body>
+
+<!-- auth.js SEM type="module" -->
+<script src="js/auth.js"></script>
+
+</html>

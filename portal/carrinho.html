@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Carrinho — Confeitaria</title>
+  <link rel="stylesheet" href="css/portal.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="navbar-logo">
+        <img src="imgs/logotipo.png" alt="Confeitaria" class="navbar-logo-img" />
+      </a>
+      <div class="navbar-actions">
+        <a href="index.html" class="navbar-link">← Continuar comprando</a>
+        <a href="login.html" class="navbar-link" id="link-login">Entrar</a>
+        <a href="minha-conta.html" class="navbar-link" id="link-conta"
+          style="display:none">Minha conta</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== CONTEÚDO ===== -->
+  <div class="container" style="padding-top:40px; padding-bottom:64px">
+
+    <h1 style="font-family:'Playfair Display',serif; font-size:28px;
+      font-weight:700; margin-bottom:32px">
+      Seu carrinho 🛒
+    </h1>
+
+    <!-- Estado vazio -->
+    <div id="carrinho-vazio" style="display:none" class="empty-state">
+      <div class="empty-state-icon">🛒</div>
+      <div class="empty-state-titulo">Seu carrinho está vazio</div>
+      <div class="empty-state-desc" style="margin-bottom:24px">
+        Adicione produtos do cardápio para continuar
+      </div>
+      <a href="index.html#cardapio" class="btn btn-primary">
+        Ver cardápio
+      </a>
+    </div>
+
+    <!-- Carrinho com itens -->
+    <div id="carrinho-conteudo" style="display:none">
+      <div style="display:grid; grid-template-columns:1fr 340px; gap:32px;
+        align-items:start;">
+
+        <!-- Lista de itens -->
+        <div>
+          <div id="lista-itens"></div>
+        </div>
+
+        <!-- Resumo do pedido -->
+        <div style="position:sticky; top:80px">
+          <div style="background:white; border:1px solid var(--cor-borda);
+            border-radius:var(--radius-md); padding:24px;
+            box-shadow:var(--sombra-sm);">
+
+            <h2 style="font-family:'Playfair Display',serif; font-size:18px;
+              font-weight:700; margin-bottom:20px">
+              Resumo do pedido
+            </h2>
+
+            <div id="resumo-itens" style="margin-bottom:16px;
+              padding-bottom:16px; border-bottom:1px solid var(--cor-borda);">
+            </div>
+
+            <div style="display:flex; justify-content:space-between;
+              align-items:center; margin-bottom:24px">
+              <span style="font-size:16px; font-weight:600">Total</span>
+              <span style="font-size:22px; font-weight:700;
+                color:var(--cor-primaria)" id="total-geral">R$ 0,00</span>
+            </div>
+
+            <button class="btn btn-primary btn-full"
+              onclick="irParaCheckout()" id="btn-checkout">
+              Finalizar pedido →
+            </button>
+
+            <p style="font-size:12px; color:var(--cor-texto-leve);
+              text-align:center; margin-top:12px">
+              🔒 Você precisará fazer login para finalizar
+            </p>
+
+          </div>
+
+          <!-- Informativo -->
+          <div style="background:var(--cor-acento); border:1px solid var(--cor-secundaria);
+            border-radius:var(--radius-sm); padding:14px 16px; margin-top:16px;
+            font-size:13px; color:var(--cor-primaria)">
+            💡 <strong>Lembrete:</strong> os pedidos são feitos por encomenda.
+            Você escolherá a data de entrega no próximo passo.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="container">
+      <p><strong>🍬 Confeitaria</strong> — Doces e salgados artesanais</p>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <style>
+    .item-carrinho {
+      background: white;
+      border: 1px solid var(--cor-borda);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .item-emoji {
+      font-size: 40px;
+      flex-shrink: 0;
+      width: 60px;
+      height: 60px;
+      background: var(--cor-fundo);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .item-info { flex: 1; }
+
+    .item-nome {
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 2px;
+    }
+
+    .item-pers {
+      font-size: 12px;
+      color: var(--cor-texto-leve);
+      margin-bottom: 8px;
+    }
+
+    .item-controles {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-qtd {
+      background: var(--cor-fundo);
+      border: 1px solid var(--cor-borda);
+      border-radius: 50%;
+      width: 28px; height: 28px;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .btn-qtd:hover { background: var(--cor-borda); }
+
+    .item-preco {
+      font-weight: 600;
+      font-size: 16px;
+      color: var(--cor-primaria);
+      white-space: nowrap;
+    }
+
+    .btn-remover {
+      background: none;
+      border: none;
+      color: #DC2626;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 4px;
+      opacity: 0.6;
+      transition: opacity 0.15s;
+    }
+
+    .btn-remover:hover { opacity: 1; }
+
+    @media (max-width: 768px) {
+      #carrinho-conteudo > div {
+        grid-template-columns: 1fr !important;
+      }
+      #carrinho-conteudo > div > div:last-child {
+        position: static !important;
+      }
+    }
+  </style>
+
+</body>
+<script src="js/carrinho.js"></script>
+</html>

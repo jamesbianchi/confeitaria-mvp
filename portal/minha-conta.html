@@ -1,0 +1,300 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Minha Conta — Confeitaria</title>
+  <link rel="stylesheet" href="css/portal.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    .conta-grid {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 32px;
+      align-items: start;
+      padding: 40px 0 64px;
+    }
+
+    .conta-menu {
+      background: white;
+      border: 1px solid var(--cor-borda);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      position: sticky;
+      top: 80px;
+    }
+
+    .conta-menu-header {
+      background: var(--cor-primaria);
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .conta-avatar {
+      width: 56px; height: 56px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+      display: flex; align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin: 0 auto 8px;
+    }
+
+    .conta-nome {
+      font-family: 'Playfair Display', serif;
+      font-size: 16px; font-weight: 600;
+    }
+
+    .conta-email {
+      font-size: 12px;
+      opacity: 0.8;
+      margin-top: 2px;
+    }
+
+    .conta-nav-item {
+      display: flex; align-items: center;
+      gap: 10px; padding: 14px 20px;
+      font-size: 14px; font-weight: 500;
+      color: var(--cor-texto-leve);
+      cursor: pointer; border: none;
+      background: none; width: 100%;
+      text-align: left;
+      border-top: 1px solid var(--cor-borda);
+      transition: all 0.15s;
+    }
+
+    .conta-nav-item:hover {
+      background: var(--cor-fundo);
+      color: var(--cor-primaria);
+    }
+
+    .conta-nav-item.ativo {
+      background: var(--cor-acento);
+      color: var(--cor-primaria);
+      border-left: 3px solid var(--cor-primaria);
+    }
+
+    .conta-nav-item.perigo:hover {
+      background: #fef2f2;
+      color: #DC2626;
+    }
+
+    .aba-conteudo { display: none; }
+    .aba-conteudo.ativa { display: block; }
+
+    .pedido-card {
+      background: white;
+      border: 1px solid var(--cor-borda);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 12px;
+      transition: box-shadow 0.15s;
+    }
+
+    .pedido-card:hover { box-shadow: var(--sombra-sm); }
+
+    .pedido-card-header {
+      display: flex; justify-content: space-between;
+      align-items: flex-start; margin-bottom: 12px;
+    }
+
+    .pedido-numero {
+      font-size: 12px; color: var(--cor-texto-leve);
+      margin-bottom: 4px;
+    }
+
+    .pedido-data {
+      font-size: 15px; font-weight: 600;
+      color: var(--cor-texto);
+    }
+
+    .pedido-itens {
+      font-size: 13px; color: var(--cor-texto-leve);
+      margin-bottom: 12px; line-height: 1.6;
+    }
+
+    .pedido-footer {
+      display: flex; justify-content: space-between;
+      align-items: center;
+      padding-top: 12px;
+      border-top: 1px solid var(--cor-borda);
+    }
+
+    .pedido-valor {
+      font-size: 16px; font-weight: 700;
+      color: var(--cor-primaria);
+    }
+
+    .status-badge {
+      padding: 4px 12px; border-radius: 20px;
+      font-size: 12px; font-weight: 500;
+    }
+
+    .status-recebido    { background: #e8f4fd; color: #1a73e8; }
+    .status-confirmado  { background: #f0fdf4; color: #166534; }
+    .status-em_producao { background: #fff8e1; color: #92400e; }
+    .status-pronto      { background: #f3e8ff; color: #7c3aed; }
+    .status-entregue    { background: #f0fdf4; color: #166534; }
+    .status-cancelado   { background: #fef2f2; color: #DC2626; }
+
+    .pag-status {
+      font-size: 12px; margin-top: 4px;
+    }
+
+    @media (max-width: 768px) {
+      .conta-grid {
+        grid-template-columns: 1fr;
+        padding: 20px 0 40px;
+      }
+      .conta-menu { position: static; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="navbar-logo">
+        <img src="imgs/logotipo.png" alt="Confeitaria" class="navbar-logo-img" />
+      </a>
+      <div class="navbar-actions">
+        <a href="index.html" class="navbar-link">← Cardápio</a>
+        <a href="carrinho.html" class="btn-carrinho">
+          🛒 Carrinho
+          <span class="carrinho-badge" id="carrinho-badge">0</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="conta-grid">
+
+      <!-- Menu lateral -->
+      <div class="conta-menu">
+        <div class="conta-menu-header">
+          <div class="conta-avatar">👤</div>
+          <div class="conta-nome" id="menu-nome">Carregando...</div>
+          <div class="conta-email" id="menu-email"></div>
+        </div>
+        <button class="conta-nav-item ativo" onclick="trocarAba('pedidos')">
+          📋 Meus pedidos
+        </button>
+        <button class="conta-nav-item" onclick="trocarAba('dados')">
+          ✏️ Meus dados
+        </button>
+        <button class="conta-nav-item perigo" onclick="fazerLogout()">
+          🚪 Sair da conta
+        </button>
+      </div>
+
+      <!-- Conteúdo -->
+      <div>
+
+        <!-- ABA: Meus pedidos -->
+        <div class="aba-conteudo ativa" id="aba-pedidos">
+          <h2 style="font-family:'Playfair Display',serif; font-size:22px;
+            font-weight:700; margin-bottom:20px">
+            Meus pedidos
+          </h2>
+
+          <!-- Filtro de status -->
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px">
+            <button class="categoria-pill ativa" onclick="filtrarPedidos('todos', this)">
+              Todos
+            </button>
+            <button class="categoria-pill" onclick="filtrarPedidos('recebido', this)">
+              Recebido
+            </button>
+            <button class="categoria-pill" onclick="filtrarPedidos('confirmado', this)">
+              Confirmado
+            </button>
+            <button class="categoria-pill" onclick="filtrarPedidos('em_producao', this)">
+              Em produção
+            </button>
+            <button class="categoria-pill" onclick="filtrarPedidos('entregue', this)">
+              Entregue
+            </button>
+          </div>
+
+          <div id="lista-pedidos">
+            <!-- Skeletons -->
+            ${[1,2,3].map(() => `
+              <div class="pedido-card">
+                <div class="skeleton" style="height:16px;width:40%;
+                  margin-bottom:8px;border-radius:4px"></div>
+                <div class="skeleton" style="height:20px;width:60%;
+                  margin-bottom:12px;border-radius:4px"></div>
+                <div class="skeleton" style="height:14px;width:80%;
+                  border-radius:4px"></div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- ABA: Meus dados -->
+        <div class="aba-conteudo" id="aba-dados">
+          <h2 style="font-family:'Playfair Display',serif; font-size:22px;
+            font-weight:700; margin-bottom:20px">
+            Meus dados
+          </h2>
+
+          <div style="background:white; border:1px solid var(--cor-borda);
+            border-radius:var(--radius-md); padding:28px;
+            max-width:500px">
+
+            <div class="form-group">
+              <label for="dados-nome">Nome completo</label>
+              <input type="text" id="dados-nome" placeholder="Seu nome" />
+            </div>
+
+            <div class="form-group">
+              <label for="dados-telefone">WhatsApp</label>
+              <input type="tel" id="dados-telefone"
+                placeholder="(21) 99999-9999" />
+            </div>
+
+            <div class="form-group">
+              <label for="dados-endereco">Endereço principal</label>
+              <textarea id="dados-endereco" rows="2"
+                placeholder="Rua, número, bairro..."></textarea>
+            </div>
+
+            <div style="border-top:1px solid var(--cor-borda);
+              padding-top:20px; margin-top:4px">
+              <p style="font-size:13px; color:var(--cor-texto-leve);
+                margin-bottom:16px">
+                🔒 Para alterar sua senha, informe a nova abaixo:
+              </p>
+              <div class="form-group">
+                <label for="dados-senha">Nova senha (opcional)</label>
+                <input type="password" id="dados-senha"
+                  placeholder="Deixe em branco para não alterar" />
+              </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="salvarDados()"
+              id="btn-salvar-dados">
+              Salvar alterações
+            </button>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <p><strong>🍬 Confeitaria</strong> — Doces e salgados artesanais</p>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+</body>
+<script src="js/conta.js"></script>
+</html>

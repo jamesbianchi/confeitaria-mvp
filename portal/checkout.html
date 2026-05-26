@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Finalizar Pedido — Confeitaria</title>
+  <link rel="stylesheet" href="css/portal.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    .stepper {
+      display: flex; align-items: center;
+      gap: 0; margin-bottom: 40px;
+    }
+    .step {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; font-weight: 500;
+      color: var(--cor-texto-leve);
+    }
+    .step.ativo { color: var(--cor-primaria); }
+    .step.concluido { color: var(--cor-secundaria); }
+    .step-num {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 2px solid var(--cor-borda);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; flex-shrink: 0;
+      background: white;
+    }
+    .step.ativo .step-num {
+      background: var(--cor-primaria);
+      border-color: var(--cor-primaria);
+      color: white;
+    }
+    .step.concluido .step-num {
+      background: var(--cor-secundaria);
+      border-color: var(--cor-secundaria);
+      color: white;
+    }
+    .step-linha {
+      flex: 1; height: 2px;
+      background: var(--cor-borda);
+      margin: 0 8px;
+    }
+    .step-linha.concluida { background: var(--cor-secundaria); }
+
+    .checkout-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 32px;
+      align-items: start;
+    }
+
+    .secao-checkout {
+      background: white;
+      border: 1px solid var(--cor-borda);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+
+    .secao-checkout-titulo {
+      font-family: 'Playfair Display', serif;
+      font-size: 17px; font-weight: 700;
+      margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .tipo-entrega-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px; margin-bottom: 4px;
+    }
+
+    .tipo-card {
+      border: 2px solid var(--cor-borda);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+
+    .tipo-card:hover { border-color: var(--cor-secundaria); }
+    .tipo-card.selecionado {
+      border-color: var(--cor-primaria);
+      background: var(--cor-acento);
+    }
+
+    .tipo-card-icon { font-size: 28px; margin-bottom: 6px; }
+    .tipo-card-label { font-size: 14px; font-weight: 500; }
+    .tipo-card-desc  { font-size: 12px; color: var(--cor-texto-leve); margin-top: 2px; }
+
+    .calendario-simples {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px; margin-top: 12px;
+    }
+
+    .cal-header {
+      text-align: center; font-size: 11px;
+      font-weight: 500; color: var(--cor-texto-leve);
+      padding: 4px 0;
+    }
+
+    .cal-dia {
+      aspect-ratio: 1;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--cor-borda);
+      display: flex; align-items: center;
+      justify-content: center;
+      font-size: 13px; font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: white;
+    }
+
+    .cal-dia:hover:not(.bloqueado):not(.passado) {
+      border-color: var(--cor-primaria);
+      background: var(--cor-acento);
+    }
+
+    .cal-dia.selecionado {
+      background: var(--cor-primaria);
+      border-color: var(--cor-primaria);
+      color: white;
+    }
+
+    .cal-dia.hoje {
+      border-color: var(--cor-secundaria);
+      font-weight: 700;
+    }
+
+    .cal-dia.bloqueado {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #fca5a5;
+      cursor: not-allowed;
+    }
+
+    .cal-dia.passado {
+      background: var(--cor-fundo);
+      color: var(--cor-borda);
+      cursor: not-allowed;
+    }
+
+    .cal-dia.vazio {
+      border: none; background: none;
+      cursor: default;
+    }
+
+    .cal-nav {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-bottom: 8px;
+    }
+
+    .cal-nav-btn {
+      background: none; border: 1px solid var(--cor-borda);
+      border-radius: var(--radius-sm);
+      padding: 4px 10px; cursor: pointer;
+      font-size: 14px; color: var(--cor-texto-leve);
+      transition: all 0.15s;
+    }
+
+    .cal-nav-btn:hover { background: var(--cor-fundo); }
+
+    @media (max-width: 768px) {
+      .checkout-grid { grid-template-columns: 1fr; }
+      .stepper .step span { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="navbar-logo">
+        <img src="imgs/logotipo.png" alt="Confeitaria" class="navbar-logo-img" />
+      </a>
+      <div class="navbar-actions">
+        <a href="carrinho.html" class="navbar-link">← Voltar ao carrinho</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container" style="padding-top:40px; padding-bottom:64px">
+
+    <h1 style="font-family:'Playfair Display',serif; font-size:28px;
+      font-weight:700; margin-bottom:24px">
+      Finalizar pedido
+    </h1>
+
+    <!-- Stepper -->
+    <div class="stepper">
+      <div class="step concluido" id="step-1">
+        <div class="step-num">✓</div>
+        <span>Carrinho</span>
+      </div>
+      <div class="step-linha concluida"></div>
+      <div class="step ativo" id="step-2">
+        <div class="step-num">2</div>
+        <span>Entrega</span>
+      </div>
+      <div class="step-linha" id="linha-2"></div>
+      <div class="step" id="step-3">
+        <div class="step-num">3</div>
+        <span>Confirmação</span>
+      </div>
+    </div>
+
+    <!-- ETAPA 2 — Entrega -->
+    <div id="etapa-entrega">
+      <div class="checkout-grid">
+
+        <div>
+          <!-- Tipo de entrega -->
+          <div class="secao-checkout">
+            <div class="secao-checkout-titulo">🚚 Tipo de entrega</div>
+            <div class="tipo-entrega-grid">
+              <div class="tipo-card selecionado" id="card-delivery"
+                onclick="selecionarTipo('delivery')">
+                <div class="tipo-card-icon">🛵</div>
+                <div class="tipo-card-label">Delivery</div>
+                <div class="tipo-card-desc">Entregamos no seu endereço</div>
+              </div>
+              <div class="tipo-card" id="card-retirada"
+                onclick="selecionarTipo('retirada')">
+                <div class="tipo-card-icon">🏠</div>
+                <div class="tipo-card-label">Retirada</div>
+                <div class="tipo-card-desc">Retire no local combinado</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Endereço (só para delivery) -->
+          <div class="secao-checkout" id="secao-endereco">
+            <div class="secao-checkout-titulo">📍 Endereço de entrega</div>
+            <div class="form-group">
+              <label for="endereco-entrega">Endereço completo *</label>
+              <textarea id="endereco-entrega" rows="2"
+                placeholder="Rua, número, complemento, bairro"></textarea>
+              <span class="form-erro" id="erro-endereco"></span>
+            </div>
+          </div>
+
+          <!-- Calendário -->
+          <div class="secao-checkout">
+            <div class="secao-checkout-titulo">📅 Data de entrega</div>
+            <p style="font-size:13px; color:var(--cor-texto-leve); margin-bottom:12px">
+              Escolha a data com pelo menos <strong>2 dias de antecedência</strong>.
+              Datas em vermelho estão esgotadas.
+            </p>
+
+            <div class="cal-nav">
+              <button class="cal-nav-btn" onclick="mudarMesCheckout(-1)">← </button>
+              <span style="font-size:14px; font-weight:500"
+                id="cal-titulo-checkout"></span>
+              <button class="cal-nav-btn" onclick="mudarMesCheckout(1)"> →</button>
+            </div>
+
+            <div class="calendario-simples">
+              <div class="cal-header">Dom</div>
+              <div class="cal-header">Seg</div>
+              <div class="cal-header">Ter</div>
+              <div class="cal-header">Qua</div>
+              <div class="cal-header">Qui</div>
+              <div class="cal-header">Sex</div>
+              <div class="cal-header">Sáb</div>
+            </div>
+            <div class="calendario-simples" id="cal-grid-checkout"></div>
+
+            <div id="data-selecionada-info" style="display:none;
+              margin-top:12px; padding:10px 14px;
+              background:var(--cor-acento); border-radius:var(--radius-sm);
+              font-size:13px; color:var(--cor-primaria); font-weight:500">
+            </div>
+          </div>
+
+          <!-- Observações -->
+          <div class="secao-checkout">
+            <div class="secao-checkout-titulo">📝 Observações</div>
+            <div class="form-group" style="margin:0">
+              <textarea id="obs-pedido" rows="3"
+                placeholder="Alergias, tema de decoração, instruções especiais...">
+              </textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resumo lateral -->
+        <div style="position:sticky; top:80px">
+          <div style="background:white; border:1px solid var(--cor-borda);
+            border-radius:var(--radius-md); padding:24px;
+            box-shadow:var(--sombra-sm)">
+            <h3 style="font-family:'Playfair Display',serif; font-size:16px;
+              font-weight:700; margin-bottom:16px">
+              Resumo
+            </h3>
+            <div id="resumo-checkout" style="margin-bottom:16px;
+              padding-bottom:16px; border-bottom:1px solid var(--cor-borda)">
+            </div>
+            <div style="display:flex; justify-content:space-between;
+              margin-bottom:20px; font-weight:600; font-size:16px">
+              <span>Total</span>
+              <span style="color:var(--cor-primaria)" id="total-checkout"></span>
+            </div>
+            <button class="btn btn-primary btn-full"
+              onclick="irParaConfirmacao()" id="btn-continuar">
+              Revisar pedido →
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ETAPA 3 — Confirmação -->
+    <div id="etapa-confirmacao" style="display:none">
+      <div class="checkout-grid">
+        <div>
+          <div class="secao-checkout">
+            <div class="secao-checkout-titulo">✅ Revisão do pedido</div>
+            <div id="revisao-itens"></div>
+          </div>
+          <div class="secao-checkout">
+            <div class="secao-checkout-titulo">📋 Detalhes da entrega</div>
+            <div id="revisao-entrega"
+              style="font-size:14px; color:var(--cor-texto-leve)">
+            </div>
+          </div>
+        </div>
+
+        <div style="position:sticky; top:80px">
+          <div style="background:white; border:1px solid var(--cor-borda);
+            border-radius:var(--radius-md); padding:24px;
+            box-shadow:var(--sombra-sm)">
+            <h3 style="font-family:'Playfair Display',serif; font-size:16px;
+              font-weight:700; margin-bottom:16px">
+              Total do pedido
+            </h3>
+            <div style="font-size:28px; font-weight:700;
+              color:var(--cor-primaria); margin-bottom:8px"
+              id="total-confirmacao">
+            </div>
+            <p style="font-size:12px; color:var(--cor-texto-leve);
+              margin-bottom:20px">
+              O pagamento será combinado diretamente com a confeitaria.
+            </p>
+            <button class="btn btn-primary btn-full"
+              onclick="confirmarPedido()" id="btn-confirmar">
+              Confirmar pedido 🎉
+            </button>
+            <button class="btn btn-ghost btn-full"
+              onclick="voltarParaEntrega()"
+              style="margin-top:8px">
+              ← Voltar e editar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ETAPA SUCESSO -->
+    <div id="etapa-sucesso" style="display:none; text-align:center;
+      padding:60px 20px">
+      <div style="font-size:72px; margin-bottom:16px">🎉</div>
+      <h2 style="font-family:'Playfair Display',serif; font-size:28px;
+        font-weight:700; margin-bottom:12px">
+        Pedido confirmado!
+      </h2>
+      <p style="font-size:16px; color:var(--cor-texto-leve);
+        margin-bottom:8px" id="sucesso-msg">
+      </p>
+      <p style="font-size:14px; color:var(--cor-texto-leve);
+        margin-bottom:32px">
+        Em breve entraremos em contato para combinar o pagamento.
+      </p>
+      <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap">
+        <a href="minha-conta.html" class="btn btn-primary">
+          Ver meus pedidos
+        </a>
+        <a href="index.html" class="btn btn-secondary">
+          Voltar ao cardápio
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <p><strong>🍬 Confeitaria</strong> — Doces e salgados artesanais</p>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+</body>
+<script src="js/checkout.js"></script>
+</html>

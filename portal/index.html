@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Confeitaria — Doces e Salgados por Encomenda</title>
+  <link rel="stylesheet" href="css/portal.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="navbar-logo">
+        <img src="imgs/logotipo.png" alt="Confeitaria" class="navbar-logo-img" />
+      </a>
+      <div class="navbar-actions">
+        <a href="login.html" class="navbar-link" id="link-login">Entrar</a>
+        <a href="minha-conta.html" class="navbar-link" id="link-conta"
+          style="display:none">Minha conta</a>
+        <a href="carrinho.html" class="btn-carrinho">
+          🛒 Carrinho
+          <span class="carrinho-badge" id="carrinho-badge">0</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== HERO ===== -->
+  <section class="hero">
+    <div class="container">
+      <h1 class="hero-title">Doces e Salgados<br>feitos com amor 🍫</h1>
+      <p class="hero-subtitle">
+        Encomende seus favoritos com antecedência e receba
+        tudo fresquinho no dia combinado.
+      </p>
+      <a href="#cardapio" class="btn btn-hero">Ver cardápio completo</a>
+    </div>
+  </section>
+
+  <!-- ===== DIFERENCIAIS ===== -->
+  <section style="background: var(--cor-branco); padding: 40px 0;
+    border-bottom: 1px solid var(--cor-borda);">
+    <div class="container">
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr));
+        gap: 32px; text-align: center;">
+        <div>
+          <div style="font-size:36px; margin-bottom:8px">🍰</div>
+          <div style="font-weight:600; margin-bottom:4px">Feito na hora</div>
+          <div style="font-size:13px; color:var(--cor-texto-leve)">
+            Preparado no dia da entrega
+          </div>
+        </div>
+        <div>
+          <div style="font-size:36px; margin-bottom:8px">✨</div>
+          <div style="font-weight:600; margin-bottom:4px">Personalizado</div>
+          <div style="font-size:13px; color:var(--cor-texto-leve)">
+            Tema e sabor do seu jeito
+          </div>
+        </div>
+        <div>
+          <div style="font-size:36px; margin-bottom:8px">🛵</div>
+          <div style="font-weight:600; margin-bottom:4px">Entrega ou retirada</div>
+          <div style="font-size:13px; color:var(--cor-texto-leve)">
+            Você escolhe como receber
+          </div>
+        </div>
+        <div>
+          <div style="font-size:36px; margin-bottom:8px">💚</div>
+          <div style="font-weight:600; margin-bottom:4px">Ingredientes selecionados</div>
+          <div style="font-size:13px; color:var(--cor-texto-leve)">
+            Qualidade em cada detalhe
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CARDÁPIO ===== -->
+  <section class="secao" id="cardapio">
+    <div class="container">
+
+      <h2 class="secao-titulo">Nosso Cardápio</h2>
+      <p class="secao-subtitulo">
+        Clique em qualquer produto para adicionar ao carrinho
+      </p>
+
+      <!-- Filtro de categorias -->
+      <div class="categorias" id="categorias">
+        <button class="categoria-pill ativa" onclick="filtrarCategoria('todos')">
+          Todos
+        </button>
+        <button class="categoria-pill" onclick="filtrarCategoria('doces')">
+          🍫 Doces
+        </button>
+        <button class="categoria-pill" onclick="filtrarCategoria('salgados')">
+          🥟 Salgados
+        </button>
+      </div>
+
+      <!-- Busca -->
+      <div style="margin: 16px 0">
+        <input type="text" id="busca-produto"
+          placeholder="🔍 Buscar produto..."
+          oninput="buscarProduto()"
+          style="padding: 10px 16px; border: 1.5px solid var(--cor-borda);
+          border-radius: var(--radius-full); font-size: 14px;
+          font-family: 'Inter', sans-serif; outline: none;
+          width: 100%; max-width: 360px;
+          transition: border-color 0.15s;"
+          onfocus="this.style.borderColor='var(--cor-primaria)'"
+          onblur="this.style.borderColor='var(--cor-borda)'" />
+      </div>
+
+      <!-- Grid de produtos -->
+      <div class="produtos-grid" id="produtos-grid">
+        <!-- Skeleton loading -->
+        ${[1,2,3,4,5,6].map(() => `
+          <div class="produto-card">
+            <div class="skeleton" style="height:200px"></div>
+            <div style="padding:16px">
+              <div class="skeleton" style="height:20px; margin-bottom:8px; border-radius:4px"></div>
+              <div class="skeleton" style="height:14px; width:70%; border-radius:4px"></div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- Empty state -->
+      <div id="empty-state" style="display:none" class="empty-state">
+        <div class="empty-state-icon">🔍</div>
+        <div class="empty-state-titulo">Nenhum produto encontrado</div>
+        <div class="empty-state-desc">Tente buscar por outro termo</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== COMO FUNCIONA ===== -->
+  <section style="background: var(--cor-acento); padding: 48px 0;">
+    <div class="container">
+      <h2 class="secao-titulo" style="text-align:center; margin-bottom:8px">
+        Como fazer seu pedido
+      </h2>
+      <p class="secao-subtitulo" style="text-align:center; margin-bottom:40px">
+        Simples, rápido e sem complicação
+      </p>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr));
+        gap: 24px; text-align:center; max-width:800px; margin:0 auto;">
+        <div style="background:white; border-radius:var(--radius-md);
+          padding:28px 20px; box-shadow:var(--sombra-sm);">
+          <div style="background:var(--cor-primaria); color:white; width:36px; height:36px;
+            border-radius:50%; display:flex; align-items:center; justify-content:center;
+            font-weight:700; margin:0 auto 12px; font-size:16px;">1</div>
+          <div style="font-weight:600; margin-bottom:6px">Escolha os produtos</div>
+          <div style="font-size:13px; color:var(--cor-texto-leve)">
+            Navegue pelo cardápio e adicione ao carrinho
+          </div>
+        </div>
+        <div style="background:white; border-radius:var(--radius-md);
+          padding:28px 20px; box-shadow:var(--sombra-sm);">
+          <div style="background:var(--cor-primaria); color:white; width:36px; height:36px;
+            border-radius:50%; display:flex; align-items:center; justify-content:center;
+            font-weight:700; margin:0 auto 12px; font-size:16px;">2</div>
+          <div style="font-weight:600; margin-bottom:6px">Faça seu cadastro</div>
+          <div style="font-size:13px; color:var(--cor-texto-leve)">
+            Crie sua conta rapidinho para finalizar
+          </div>
+        </div>
+        <div style="background:white; border-radius:var(--radius-md);
+          padding:28px 20px; box-shadow:var(--sombra-sm);">
+          <div style="background:var(--cor-primaria); color:white; width:36px; height:36px;
+            border-radius:50%; display:flex; align-items:center; justify-content:center;
+            font-weight:700; margin:0 auto 12px; font-size:16px;">3</div>
+          <div style="font-weight:600; margin-bottom:6px">Escolha a data</div>
+          <div style="font-size:13px; color:var(--cor-texto-leve)">
+            Selecione quando quer receber
+          </div>
+        </div>
+        <div style="background:white; border-radius:var(--radius-md);
+          padding:28px 20px; box-shadow:var(--sombra-sm);">
+          <div style="background:var(--cor-primaria); color:white; width:36px; height:36px;
+            border-radius:50%; display:flex; align-items:center; justify-content:center;
+            font-weight:700; margin:0 auto 12px; font-size:16px;">4</div>
+          <div style="font-weight:600; margin-bottom:6px">Receba seu pedido</div>
+          <div style="font-size:13px; color:var(--cor-texto-leve)">
+            Fresquinho e no prazo combinado
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="container">
+      <div style="font-family:'Playfair Display',serif; font-size:20px;
+        color:white; margin-bottom:8px">🍬 Confeitaria</div>
+      <p>Doces e salgados artesanais por encomenda</p>
+      <p style="margin-top:8px; font-size:13px">
+        Dúvidas? Fale pelo
+        <a href="https://wa.me/55" target="_blank"
+          style="color:var(--cor-secundaria); text-decoration:none;">
+          WhatsApp
+        </a>
+      </p>
+    </div>
+  </footer>
+
+  <!-- Modal adicionar ao carrinho -->
+  <div class="modal-overlay" id="modal-produto">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-titulo" id="modal-produto-nome"></span>
+        <button class="modal-fechar" onclick="fecharModal()">×</button>
+      </div>
+      <p style="font-size:13px; color:var(--cor-texto-leve); margin-bottom:16px"
+        id="modal-produto-desc"></p>
+
+      <div style="display:flex; align-items:center; justify-content:space-between;
+        margin-bottom:20px">
+        <span style="font-size:20px; font-weight:600; color:var(--cor-primaria)"
+          id="modal-produto-preco"></span>
+        <div style="display:flex; align-items:center; gap:12px">
+          <button onclick="alterarQtd(-1)"
+            style="background:var(--cor-fundo); border:1px solid var(--cor-borda);
+            border-radius:50%; width:32px; height:32px; font-size:18px;
+            cursor:pointer; display:flex; align-items:center; justify-content:center;">
+            −
+          </button>
+          <span id="modal-qtd" style="font-size:18px; font-weight:600; min-width:24px;
+            text-align:center">1</span>
+          <button onclick="alterarQtd(1)"
+            style="background:var(--cor-fundo); border:1px solid var(--cor-borda);
+            border-radius:50%; width:32px; height:32px; font-size:18px;
+            cursor:pointer; display:flex; align-items:center; justify-content:center;">
+            +
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="modal-personalizacao">
+          Personalização (opcional)
+        </label>
+        <input type="text" id="modal-personalizacao"
+          placeholder="Ex: sem açúcar, tema unicórnio..." />
+      </div>
+
+      <input type="hidden" id="modal-produto-id" />
+      <input type="hidden" id="modal-produto-preco-val" />
+
+      <div style="margin-top:20px">
+        <button class="btn btn-primary btn-full" onclick="adicionarAoCarrinho()">
+          Adicionar ao carrinho
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+</body>
+<script src="js/cardapio.js"></script>
+</html>
