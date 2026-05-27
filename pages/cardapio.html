@@ -6,16 +6,80 @@
   <title>Cardápio — Confeitaria</title>
   <link rel="stylesheet" href="../css/global.css" />
   <link rel="stylesheet" href="../css/components.css" />
+  <style>
+    .foto-upload-area {
+      border: 2px dashed #ddd;
+      border-radius: 8px;
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #fafaf8;
+      position: relative;
+    }
+    .foto-upload-area:hover {
+      border-color: #1a1a18;
+      background: #f5f5f0;
+    }
+    .foto-upload-area.dragover {
+      border-color: #1D9E75;
+      background: #f0fdf4;
+    }
+    .foto-preview {
+      width: 100%; height: 180px;
+      object-fit: cover;
+      border-radius: 6px;
+      display: none;
+    }
+    .foto-upload-placeholder { color: #888; font-size: 13px; }
+    .foto-upload-placeholder span {
+      font-size: 32px; display: block; margin-bottom: 8px;
+    }
+    .foto-remover {
+      position: absolute; top: 8px; right: 8px;
+      background: #E24B4A; color: white;
+      border: none; border-radius: 50%;
+      width: 24px; height: 24px;
+      font-size: 14px; cursor: pointer;
+      display: none; align-items: center;
+      justify-content: center;
+    }
+    .produto-thumb {
+      width: 48px; height: 48px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid #e0dfd8;
+    }
+    .produto-thumb-placeholder {
+      width: 48px; height: 48px;
+      background: #f5f5f0;
+      border-radius: 6px;
+      display: flex; align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+    .upload-progress {
+      display: none;
+      margin-top: 8px;
+    }
+    .progress-bar {
+      height: 4px; background: #f0f0ee;
+      border-radius: 2px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; background: #1D9E75;
+      border-radius: 2px;
+      transition: width 0.3s;
+      width: 0%;
+    }
+  </style>
 </head>
 <body>
 
   <div class="layout">
 
-    <!-- ===== MENU LATERAL ===== -->
     <aside class="sidebar">
-      <div class="logo">
-        <img src="../portal/imgs/logotipo.png" alt="Confeitaria" class="sidebar-logo-img" />
-      </div>
+      <div class="logo">🍬 Confeitaria</div>
       <nav>
         <a href="../index.html">🏠 Início</a>
         <a href="pedidos.html">📋 Pedidos</a>
@@ -26,17 +90,24 @@
       </nav>
     </aside>
 
-    <!-- ===== CONTEÚDO ===== -->
     <main class="main-content">
 
       <div class="page-header">
         <h1 class="page-title">Cardápio</h1>
-        <button class="btn btn-primary" onclick="abrirModal()">+ Novo produto</button>
+        <div style="display:flex; gap:8px">
+          <a href="../portal/index.html" target="_blank"
+            class="btn btn-outline">
+            🌐 Ver portal do cliente
+          </a>
+          <button class="btn btn-primary" onclick="abrirModal()">
+            + Novo produto
+          </button>
+        </div>
       </div>
 
-      <!-- Filtro -->
       <div class="filters">
-        <input type="text" id="busca" placeholder="Buscar produto..." oninput="filtrar()" />
+        <input type="text" id="busca"
+          placeholder="Buscar produto..." oninput="filtrar()" />
         <select id="filtro-status" onchange="filtrar()">
           <option value="todos">Todos</option>
           <option value="ativo">Ativos</option>
@@ -44,64 +115,114 @@
         </select>
       </div>
 
-      <!-- Tabela de produtos -->
       <div class="card">
         <table>
           <thead>
             <tr>
+              <th style="width:60px">Foto</th>
               <th>Produto</th>
               <th>Descrição</th>
               <th>Preço base</th>
               <th>Status</th>
-              <th></th>
+              <th>Ações</th>
             </tr>
           </thead>
-
           <tbody id="lista-produtos">
-            <tr><td colspan="5" class="empty-state">Carregando...</td></tr>
+            <tr><td colspan="6" class="empty-state">Carregando...</td></tr>
           </tbody>
         </table>
       </div>
 
-      <!-- Modal: novo/editar produto -->
-      <div id="modal-overlay" class="modal-overlay" aria-hidden="true">
-        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
-          <div class="modal-header">
-            <h3 id="modal-titulo" class="modal-title">Novo produto</h3>
-            <button class="modal-close" onclick="fecharModal()" aria-label="Fechar">✕</button>
-          </div>
-
-          <div class="modal-body">
-            <input type="hidden" id="produto-id" />
-
-            <label for="produto-nome">Nome</label>
-            <input id="produto-nome" type="text" />
-
-            <label for="produto-descricao">Descrição</label>
-            <textarea id="produto-descricao" rows="3"></textarea>
-
-            <label for="produto-preco">Preço base</label>
-            <input id="produto-preco" type="number" step="0.01" min="0" />
-
-            <label for="produto-ativo">Ativo</label>
-            <select id="produto-ativo">
-              <option value="true">Sim</option>
-              <option value="false">Não</option>
-            </select>
-          </div>
-
-          <div class="modal-footer">
-            <button class="btn" onclick="fecharModal()">Cancelar</button>
-            <button class="btn btn-primary" type="button" onclick="salvarProduto()">Salvar</button>
-          </div>
-        </div>
-      </div>
-
-      <div id="toast" class="toast" role="status" aria-live="polite"></div>
-
     </main>
   </div>
 
-  <script type="module" src="../js/cardapio.js"></script>
+  <!-- MODAL -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal" style="max-width:520px">
+      <div class="modal-header">
+        <span class="modal-title" id="modal-titulo">Novo produto</span>
+        <button class="modal-close" onclick="fecharModal()">×</button>
+      </div>
+
+      <input type="hidden" id="produto-id" />
+      <input type="hidden" id="produto-foto-atual" />
+
+      <div class="form-group">
+        <label>Foto do produto</label>
+
+        <div class="foto-upload-area" id="upload-area"
+          onclick="document.getElementById('input-foto').click()"
+          ondragover="dragOver(event)"
+          ondragleave="dragLeave(event)"
+          ondrop="dropFoto(event)">
+
+          <img id="foto-preview" class="foto-preview" alt="Preview do produto" />
+
+          <div class="foto-upload-placeholder" id="upload-placeholder">
+            <span>📷</span>
+            Clique para adicionar foto<br>
+            <small style="color:#aaa">JPG, PNG ou WEBP — máx. 2MB</small>
+          </div>
+
+          <button class="foto-remover" id="btn-remover-foto"
+            onclick="event.stopPropagation(); removerFoto()">×</button>
+        </div>
+
+        <div class="upload-progress" id="upload-progress">
+          <div style="font-size:12px; color:#888; margin-bottom:4px">
+            Enviando foto...
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+        </div>
+
+        <input type="file" id="input-foto" accept="image/*"
+          style="display:none" onchange="selecionarFoto(event)" />
+      </div>
+
+      <div class="form-group">
+        <label>Nome do produto *</label>
+        <input type="text" id="produto-nome"
+          placeholder="Ex: Brigadeiro de chocolate" />
+      </div>
+
+      <div class="form-group">
+        <label>Descrição</label>
+        <textarea id="produto-descricao" rows="2"
+          placeholder="Ex: Brigadeiro tradicional com granulado belga">
+        </textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Preço base (R$) *</label>
+        <input type="number" id="produto-preco"
+          min="0" step="0.01" placeholder="0,00" />
+      </div>
+
+      <div class="form-group">
+        <label>Status</label>
+        <select id="produto-ativo">
+          <option value="true">Ativo</option>
+          <option value="false">Inativo</option>
+        </select>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="fecharModal()">
+          Cancelar
+        </button>
+        <button class="btn btn-primary" onclick="salvarProduto()"
+          id="btn-salvar">
+          Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
 </body>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/cardapio.js"></script>
 </html>

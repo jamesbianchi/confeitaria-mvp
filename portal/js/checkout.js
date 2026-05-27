@@ -416,6 +416,43 @@ async function confirmarPedido() {
 
     if (erroItens) throw erroItens
 
+    // Envia e-mail de confirmação
+    try {
+      const itensEmail = carrinho.map(item => ({
+        nome:          item.nome,
+        quantidade:    item.quantidade,
+        preco:         item.preco,
+        personalizacao:item.personalizacao || ''
+      }))
+
+      await fetch(
+        'https://https://fnbyxijurnydkqivklcc.supabase.co/functions/v1/enviar-confirmacao',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type':  'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({
+            cliente: {
+              nome:  sessaoUsuario.user.user_metadata?.nome ||
+                     sessaoUsuario.user.email,
+              email: sessaoUsuario.user.email
+            },
+            pedido: {
+              data_entrega: dataSelecionada,
+              tipo_entrega: tipoEntrega,
+              observacoes:  document.getElementById('obs-pedido').value.trim()
+            },
+            itens: itensEmail
+          })
+        }
+      )
+    } catch (errEmail) {
+      // E-mail falhou mas pedido já foi salvo — não bloqueia o fluxo
+      console.warn('Aviso: e-mail não enviado', errEmail)
+    }
+
     // Limpa o carrinho
     localStorage.removeItem('carrinho')
 
