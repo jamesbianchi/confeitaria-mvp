@@ -95,13 +95,16 @@ function renderizarTabela(lista) {
      
       <td style="display:flex;gap:6px;flex-wrap:wrap">
             <button class="btn btn-outline" onclick="editarPedido('${p.id}')">
-            Ver / Editar
-            </button>
-            ${p.status === 'confirmado' ? `
-            <button class="btn btn-success"
-                onclick="enviarWhatsApp('${p.id}')">
-                📲 WhatsApp
-            </button>` : ''}
+          Ver / Editar
+        </button>
+        ${p.status === 'confirmado' ? `
+        <button class="btn btn-success"
+          onclick="enviarWhatsApp('${p.id}')">
+          📲 WhatsApp
+        </button>` : ''}
+        <button class="btn btn-outline" onclick="gerarRecibo('${p.id}')">
+          📄 Recibo
+        </button>
         </td>
 
 
@@ -474,6 +477,285 @@ ${pedido.observacoes ? `📝 *Obs:* ${pedido.observacoes}\n\n` : ''}Qualquer dú
   window.open(url, '_blank')
 }
 
+
+// ===== GERAR RECIBO PDF =====
+
+async function gerarRecibo(pedidoId) {
+  // Busca pedido completo com cliente e itens
+  const { data: pedido } = await supabase
+    .from('pedidos')
+    .select(`
+      *,
+      clientes ( nome, telefone, endereco ),
+      itens_pedido (
+        quantidade, personalizacao, preco_unitario,
+        produtos ( nome )
+      )
+    `)
+    .eq('id', pedidoId)
+    .single()
+
+  if (!pedido) { mostrarToast('Pedido não encontrado', 'error'); return }
+
+  const { jsPDF } = window.jspdf
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+
+  // ===== CORES E FONTES =====
+  const VERDE    = [29, 107, 79]
+  const CINZA    = [107, 114, 128]
+  const ESCURO   = [26, 26, 24]
+  const BORDA    = [229, 231, 235]
+  const FUNDO    = [240, 253, 244]
+
+  const largura  = 210
+  const margem   = 20
+  const conteudo = largura - (margem * 2)
+  let y          = 0
+
+  // ===== HELPER — TEXTO =====
+  function texto(txt, x, posY, opts = {}) {
+    doc.setFontSize(opts.tamanho || 11)
+    doc.setTextColor(...(opts.cor || ESCURO))
+    if (opts.negrito) doc.setFont('helvetica', 'bold')
+    else              doc.setFont('helvetica', 'normal')
+    doc.text(String(txt), x, posY, { align: opts.align || 'left' })
+  }
+
+  function moeda(valor) {
+    return `R$ ${Number(valor || 0).toFixed(2).replace('.', ',')}`
+  }
+
+  function formatarData(dataStr) {
+    if (!dataStr) return '—'
+    const [ano, mes, dia] = dataStr.split('-')
+    return `${dia}/${mes}/${ano}`
+  }
+
+  // ===== HEADER VERDE =====
+  doc.setFillColor(...VERDE)
+  doc.rect(0, 0, largura, 42, 'F')
+
+  texto('🍬 Confeitaria', margem, 16, {
+    tamanho: 18, cor: [255,255,255], negrito: true
+  })
+  texto('Doces e Salgados por Encomenda', margem, 24, {
+    tamanho: 10, cor: [200,240,220]
+  })
+
+  // Badge "RECIBO"
+  doc.setFillColor(255, 255, 255)
+  doc.roundedRect(largura - margem - 28, 12, 28, 10, 2, 2, 'F')
+  texto('RECIBO', largura - margem - 14, 18.5, {
+    tamanho: 9, cor: VERDE, negrito: true, align: 'center'
+  })
+
+  y = 52
+
+  // ===== NÚMERO DO PEDIDO E DATA =====
+  texto(`Pedido #${pedido.id.substring(0,8).toUpperCase()}`, margem, y, {
+    tamanho: 13, negrito: true
+  })
+  texto(
+    `Emitido em: ${new Date().toLocaleDateString('pt-BR')}`,
+    largura - margem, y,
+    { tamanho: 9, cor: CINZA, align: 'right' }
+  )
+
+  y += 6
+  doc.setDrawColor(...BORDA)
+  doc.setLineWidth(0.3)
+  doc.line(margem, y, largura - margem, y)
+  y += 10
+
+  // ===== BLOCO CLIENTE + ENTREGA =====
+  const metade = conteudo / 2
+
+  // Fundo verde claro
+  doc.setFillColor(...FUNDO)
+  doc.roundedRect(margem, y - 4, conteudo, 34, 3, 3, 'F')
+
+  // Cliente
+  texto('CLIENTE', margem + 4, y + 2, {
+    tamanho: 8, cor: VERDE, negrito: true
+  })
+  texto(pedido.clientes?.nome || '—', margem + 4, y + 9, {
+    tamanho: 11, negrito: true
+  })
+  texto(pedido.clientes?.telefone || '', margem + 4, y + 16, {
+    tamanho: 9, cor: CINZA
+  })
+  if (pedido.clientes?.endereco) {
+    texto(pedido.clientes.endereco, margem + 4, y + 22, {
+      tamanho: 8, cor: CINZA
+    })
+  }
+
+  // Entrega
+  const xEntrega = margem + metade + 4
+  texto('ENTREGA', xEntrega, y + 2, {
+    tamanho: 8, cor: VERDE, negrito: true
+  })
+  texto(`📅 ${formatarData(pedido.data_entrega)}`, xEntrega, y + 9, {
+    tamanho: 11, negrito: true
+  })
+  texto(
+    pedido.tipo_entrega === 'delivery' ? '🛵 Delivery' : '🏠 Retirada',
+    xEntrega, y + 16,
+    { tamanho: 9, cor: CINZA }
+  )
+
+  // Status
+  const statusLabels = {
+    recebido:    'Recebido',    confirmado:  'Confirmado',
+    em_producao: 'Em produção', pronto:      'Pronto',
+    entregue:    'Entregue',    cancelado:   'Cancelado'
+  }
+  texto(
+    `Status: ${statusLabels[pedido.status] || pedido.status}`,
+    xEntrega, y + 22,
+    { tamanho: 9, cor: CINZA }
+  )
+
+  y += 42
+
+  // ===== TABELA DE ITENS =====
+  texto('ITENS DO PEDIDO', margem, y, {
+    tamanho: 9, cor: VERDE, negrito: true
+  })
+  y += 6
+
+  // Cabeçalho da tabela
+  doc.setFillColor(...VERDE)
+  doc.rect(margem, y, conteudo, 8, 'F')
+  texto('Produto', margem + 3, y + 5.5, {
+    tamanho: 9, cor: [255,255,255], negrito: true
+  })
+  texto('Qtd', margem + conteudo * 0.6, y + 5.5, {
+    tamanho: 9, cor: [255,255,255], negrito: true
+  })
+  texto('Unit.', margem + conteudo * 0.75, y + 5.5, {
+    tamanho: 9, cor: [255,255,255], negrito: true
+  })
+  texto('Total', largura - margem - 3, y + 5.5, {
+    tamanho: 9, cor: [255,255,255], negrito: true, align: 'right'
+  })
+  y += 8
+
+  // Linhas dos itens
+  const itens = pedido.itens_pedido || []
+  itens.forEach((item, idx) => {
+    const subtotal = Number(item.preco_unitario) * Number(item.quantidade)
+    const bgColor  = idx % 2 === 0 ? [255,255,255] : [249,249,247]
+
+    doc.setFillColor(...bgColor)
+    doc.rect(margem, y, conteudo, item.personalizacao ? 12 : 8, 'F')
+
+    texto(item.produtos?.nome || '—', margem + 3, y + 5.5, {
+      tamanho: 10
+    })
+
+    if (item.personalizacao) {
+      texto(`✏️ ${item.personalizacao}`, margem + 3, y + 10, {
+        tamanho: 8, cor: CINZA
+      })
+    }
+
+    texto(String(item.quantidade), margem + conteudo * 0.6, y + 5.5, {
+      tamanho: 10
+    })
+    texto(moeda(item.preco_unitario), margem + conteudo * 0.75, y + 5.5, {
+      tamanho: 10
+    })
+    texto(moeda(subtotal), largura - margem - 3, y + 5.5, {
+      tamanho: 10, negrito: true, align: 'right'
+    })
+
+    y += item.personalizacao ? 12 : 8
+  })
+
+  // Linha de total
+  doc.setFillColor(...VERDE)
+  doc.rect(margem, y, conteudo, 10, 'F')
+  texto('TOTAL', margem + 3, y + 6.5, {
+    tamanho: 11, cor: [255,255,255], negrito: true
+  })
+  texto(moeda(pedido.valor_total), largura - margem - 3, y + 6.5, {
+    tamanho: 13, cor: [255,255,255], negrito: true, align: 'right'
+  })
+  y += 18
+
+  // ===== PAGAMENTO =====
+  doc.setFillColor(...FUNDO)
+  doc.roundedRect(margem, y, conteudo, 22, 3, 3, 'F')
+
+  texto('PAGAMENTO', margem + 4, y + 7, {
+    tamanho: 8, cor: VERDE, negrito: true
+  })
+
+  const saldo = Number(pedido.valor_total) - Number(pedido.sinal_pago)
+  texto(
+    `Sinal pago: ${moeda(pedido.sinal_pago)}`,
+    margem + 4, y + 14,
+    { tamanho: 10 }
+  )
+  texto(
+    `Saldo restante: ${moeda(saldo)}`,
+    largura - margem - 4, y + 14,
+    { tamanho: 10, negrito: saldo > 0, align: 'right' }
+  )
+
+  const statusPag = {
+    pendente:       '❌ Pagamento pendente',
+    sinal_recebido: '⚠️ Sinal recebido',
+    pago:           '✅ Pago integralmente'
+  }
+  texto(
+    statusPag[pedido.status_pagamento] || '',
+    margem + 4, y + 20,
+    { tamanho: 9, cor: CINZA }
+  )
+  y += 30
+
+  // ===== OBSERVAÇÕES =====
+  if (pedido.observacoes) {
+    texto('OBSERVAÇÕES', margem, y, {
+      tamanho: 8, cor: VERDE, negrito: true
+    })
+    y += 6
+    const linhasObs = doc.splitTextToSize(pedido.observacoes, conteudo)
+    doc.setFontSize(9)
+    doc.setTextColor(...CINZA)
+    doc.text(linhasObs, margem, y)
+    y += linhasObs.length * 5 + 6
+  }
+
+  // ===== RODAPÉ =====
+  const alturaRodape = 297 - 20
+  doc.setDrawColor(...BORDA)
+  doc.line(margem, alturaRodape - 8, largura - margem, alturaRodape - 8)
+  texto(
+    '🍬 Confeitaria — Doces e Salgados Artesanais por Encomenda',
+    largura / 2, alturaRodape - 3,
+    { tamanho: 8, cor: CINZA, align: 'center' }
+  )
+  texto(
+    `Documento gerado em ${new Date().toLocaleString('pt-BR')}`,
+    largura / 2, alturaRodape + 2,
+    { tamanho: 7, cor: BORDA, align: 'center' }
+  )
+
+  // ===== SALVAR PDF =====
+  const nomeCliente = (pedido.clientes?.nome || 'cliente')
+    .replace(/\s+/g, '_').toLowerCase()
+  const dataEntrega = pedido.data_entrega?.replace(/-/g, '') || ''
+  doc.save(`recibo_${nomeCliente}_${dataEntrega}.pdf`)
+
+  mostrarToast('Recibo gerado com sucesso!')
+}
+
+
+
+
 // ===== EXPOR FUNÇÕES AO HTML =====
 window.abrirModal            = abrirModal
 window.fecharModal           = fecharModal
@@ -486,6 +768,7 @@ window.atualizarItem         = atualizarItem
 window.atualizarStatusPagamento = atualizarStatusPagamento
 window.verificarCapacidade   = verificarCapacidade
 window.enviarWhatsApp = enviarWhatsApp   // Adicionado depois do MVP - FASE 2
+window.gerarRecibo = gerarRecibo   // Adicionado depois do MVP - FASE 2
 
 // ===== INICIALIZAR =====
 carregarDados()
