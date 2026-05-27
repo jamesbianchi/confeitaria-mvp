@@ -426,7 +426,7 @@ async function confirmarPedido() {
       }))
 
       await fetch(
-        'https://fnbyxijurnydkqivklcc.supabase.co/functions/enviar-confirmacao',
+        'https://fnbyxijurnydkqivklcc.supabase.co/functions/v1/enviar-confirmacao',
         {
           method: 'POST',
           headers: {
