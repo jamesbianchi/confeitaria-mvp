@@ -425,13 +425,13 @@ async function confirmarPedido() {
         personalizacao:item.personalizacao || ''
       }))
 
-      await fetch(
+      const resEmail = await fetch(
         'https://fnbyxijurnydkqivklcc.supabase.co/functions/v1/enviar-confirmacao',
         {
           method: 'POST',
           headers: {
             'Content-Type':  'application/json',
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            'Authorization': `Bearer ${sessaoUsuario?.access_token || SUPABASE_ANON_KEY}`
           },
           body: JSON.stringify({
             cliente: {
@@ -448,6 +448,11 @@ async function confirmarPedido() {
           })
         }
       )
+
+      if (!resEmail.ok) {
+        const text = await resEmail.text().catch(() => '')
+        console.warn('Aviso: e-mail não enviado', resEmail.status, text)
+      }
     } catch (errEmail) {
       // E-mail falhou mas pedido já foi salvo — não bloqueia o fluxo
       console.warn('Aviso: e-mail não enviado', errEmail)
