@@ -132,27 +132,19 @@ function aplicarFiltros() {
 
   let filtrado = produtos
 
+  // Filtro por categoria — agora usa o campo real do banco
   if (categoriaAtiva === 'doces') {
-    filtrado = filtrado.filter(p => {
-      const n = p.nome.toLowerCase()
-      return n.includes('brigadeiro') || n.includes('beijinho') ||
-             n.includes('bolo') || n.includes('doce') ||
-             n.includes('brownie') || n.includes('chocolate') ||
-             n.includes('coco')
-    })
+    filtrado = filtrado.filter(p => p.categoria === 'doces')
   } else if (categoriaAtiva === 'salgados') {
-    filtrado = filtrado.filter(p => {
-      const n = p.nome.toLowerCase()
-      return n.includes('coxinha') || n.includes('empada') ||
-             n.includes('salgado') || n.includes('torta') ||
-             n.includes('quibe') || n.includes('enroladinho')
-    })
+    filtrado = filtrado.filter(p => p.categoria === 'salgados')
   }
 
+  // Filtro por busca
   if (busca) {
     filtrado = filtrado.filter(p =>
       p.nome.toLowerCase().includes(busca) ||
-      (p.descricao || '').toLowerCase().includes(busca)
+      (p.descricao || '').toLowerCase().includes(busca) ||
+      (p.categoria || '').toLowerCase().includes(busca)
     )
   }
 

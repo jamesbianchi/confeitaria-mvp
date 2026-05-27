@@ -70,6 +70,12 @@ function renderizarTabela(lista) {
         }
       </td>
       <td><strong>${p.nome}</strong></td>
+      <td>
+        <span class="badge ${p.categoria === 'doces'
+          ? 'badge-confirmado' : 'badge-producao'}">
+          ${p.categoria === 'doces' ? '🍫 Doces' : '🥟 Salgados'}
+        </span>
+      </td>
       <td>${p.descricao || '—'}</td>
       <td>${formatarMoeda(p.preco_base)}</td>
       <td>
@@ -204,6 +210,7 @@ function abrirModal(produto = null) {
   document.getElementById('produto-nome').value            = produto?.nome || ''
   document.getElementById('produto-descricao').value       = produto?.descricao || ''
   document.getElementById('produto-preco').value           = produto?.preco_base || ''
+  document.getElementById('produto-categoria').value       = produto?.categoria || 'doces'
   document.getElementById('produto-ativo').value           = produto ? String(produto.ativo) : 'true'
   document.getElementById('produto-foto-atual').value      = produto?.foto_url || ''
   document.getElementById('input-foto').value              = ''
@@ -263,11 +270,14 @@ async function salvarProduto() {
     }
   }
 
+  const categoria = document.getElementById('produto-categoria').value
+
   const dados = {
     nome,
     descricao:  desc,
     preco_base: preco,
     ativo,
+    categoria,
     foto_url:   fotoUrl || null
   }
 

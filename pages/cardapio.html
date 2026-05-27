@@ -121,6 +121,7 @@
             <tr>
               <th style="width:60px">Foto</th>
               <th>Produto</th>
+              <th>Categoria</th>
               <th>Descrição</th>
               <th>Preço base</th>
               <th>Status</th>
@@ -198,6 +199,14 @@
         <label>Preço base (R$) *</label>
         <input type="number" id="produto-preco"
           min="0" step="0.01" placeholder="0,00" />
+      </div>
+
+      <div class="form-group">
+        <label>Categoria *</label>
+        <select id="produto-categoria">
+          <option value="doces">🍫 Doces</option>
+          <option value="salgados">🥟 Salgados</option>
+        </select>
       </div>
 
       <div class="form-group">
