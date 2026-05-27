@@ -426,7 +426,7 @@ async function confirmarPedido() {
       }))
 
       await fetch(
-        'https://https://fnbyxijurnydkqivklcc.supabase.co/functions/v1/enviar-confirmacao',
+        'https://fnbyxijurnydkqivklcc.supabase.co/functions/v1/bright-endpoint/enviar-confirmacao',
         {
           method: 'POST',
           headers: {
