@@ -23,6 +23,9 @@ function mostrarErro(id, msg) {
   if (!el) return
   el.textContent = msg
   el.classList.toggle('visivel', !!msg)
+  // Foca no campo com erro
+  const campo = document.getElementById(id.replace('erro-', ''))
+  if (campo) campo.focus()
 }
 
 function limparErros() {
@@ -104,13 +107,30 @@ async function fazerCadastro() {
   
   setBtnLoading('btn-cadastro', true, 'Criar conta')
 
+  // Verifica se o telefone já está cadastrado
+  const { data: telefoneExistente } = await sb
+    .from('perfis')
+    .select('id')
+    .eq('telefone', telefone)
+    .maybeSingle()
+
+  if (telefoneExistente) {
+    mostrarErro('erro-cad-telefone',
+      'Este WhatsApp já está cadastrado. Faça login ou use outro número.')
+    setBtnLoading('btn-cadastro', false, 'Criar conta')
+    return
+  }
+
   const { data, error } = await sb.auth.signUp({ email, password: senha })
 
   if (error) {
-    console.error('Erro no signUp', error)
     setBtnLoading('btn-cadastro', false, 'Criar conta')
-    mostrarErro('erro-cad-email',
-      error.message.includes('already') ? 'E-mail já cadastrado' : `Erro ao criar conta: ${error.message}`)
+    if (error.message.includes('already')) {
+      mostrarErro('erro-cad-email',
+        'Este e-mail já está cadastrado. Faça login ou use outro e-mail.')
+    } else {
+      mostrarErro('erro-cad-email', 'Erro ao criar conta. Tente novamente.')
+    }
     return
   }
 
