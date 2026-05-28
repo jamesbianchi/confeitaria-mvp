@@ -97,10 +97,11 @@ async function fazerCadastro() {
   const telefone = document.getElementById('cad-telefone').value.trim()
   const senha    = document.getElementById('cad-senha').value
 
-  if (!nome)            { mostrarErro('erro-cad-nome',  'Informe seu nome'); return }
-  if (!email)           { mostrarErro('erro-cad-email', 'Informe seu e-mail'); return }
-  if (senha.length < 6) { mostrarErro('erro-cad-senha', 'Mínimo 6 caracteres'); return }
-
+  if (!nome)            { mostrarErro('erro-cad-nome',     'Informe seu nome'); return }
+  if (!email)           { mostrarErro('erro-cad-email',    'Informe seu e-mail'); return }
+  if (!telefone)        { mostrarErro('erro-cad-telefone', 'Informe seu WhatsApp'); return }
+  if (senha.length < 6) { mostrarErro('erro-cad-senha',   'Mínimo 6 caracteres'); return }
+  
   setBtnLoading('btn-cadastro', true, 'Criar conta')
 
   const { data, error } = await sb.auth.signUp({ email, password: senha })

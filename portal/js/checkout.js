@@ -355,21 +355,22 @@ async function confirmarPedido() {
 
     // Verifica se já existe cliente com esse userId
     let clienteId = null
+    // Busca cliente pelo telefone — agora sempre preenchido
     const { data: clienteExistente } = await sb
       .from('clientes')
       .select('id')
-      .eq('telefone', perfil?.telefone || userId)
+      .eq('telefone', perfil?.telefone)
       .maybeSingle()
 
     if (clienteExistente) {
       clienteId = clienteExistente.id
     } else {
-      // Cria novo cliente
+     // Cria novo cliente — telefone sempre preenchido
       const { data: novoCliente } = await sb
         .from('clientes')
         .insert({
           nome:     perfil?.nome || sessaoUsuario.user.email,
-          telefone: perfil?.telefone || '',
+          telefone: perfil?.telefone,
           endereco: document.getElementById('endereco-entrega')?.value || ''
         })
         .select()
