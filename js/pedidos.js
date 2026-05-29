@@ -221,6 +221,28 @@ function atualizarStatusPagamento() {
   return 'sinal_recebido'
 }
 
+
+
+// ===== VALIDAR DIA DA ENTREGA (só sáb e dom) =====
+function validarDiaEntrega() {
+  const data    = document.getElementById('pedido-data').value
+  const aviso   = document.getElementById('aviso-dia-entrega')
+  const btnSalvar = document.getElementById('btn-salvar') ||
+                    document.querySelector('.btn-primary[onclick="salvarPedido()"]')
+
+  if (!data) return
+
+  const diaSemana = new Date(data + 'T12:00:00').getDay()
+  const valido    = diaSemana === 6 || diaSemana === 0
+
+  aviso.style.display = valido ? 'none' : 'block'
+  if (btnSalvar) btnSalvar.disabled = !valido
+
+  if (valido) verificarCapacidade()
+}
+
+
+
 // ===== VERIFICAR CAPACIDADE DA DATA =====
 
 async function verificarCapacidade() {
@@ -326,6 +348,20 @@ async function salvarPedido() {
   const status     = document.getElementById('pedido-status').value
   const sinal      = parseFloat(document.getElementById('pedido-sinal').value) || 0
   const obs        = document.getElementById('pedido-obs').value.trim()
+
+
+
+// ↓↓↓ ADICIONE AQUI — antes das validações existentes ↓↓↓
+  if (data) {
+    const diaSemana = new Date(data + 'T12:00:00').getDay()
+    if (diaSemana !== 6 && diaSemana !== 0) {
+      mostrarToast('Entregas apenas aos sábados e domingos', 'error')
+      return
+    }
+  }
+  // ↑↑↑ FIM DA ADIÇÃO ↑↑↑
+
+
 
   // Validações
   if (!clienteId) { mostrarToast('Selecione o cliente', 'error'); return }

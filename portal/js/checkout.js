@@ -116,52 +116,41 @@ function renderizarCalendario(pedidosPorDia = {}) {
 
   document.getElementById('cal-titulo-checkout').textContent =
     `${meses[calMes]} ${calAno}`
-  
-const hoje        = new Date()
-  const hojeStr     = `${hoje.getFullYear()}-${pad(hoje.getMonth()+1)}-${pad(hoje.getDate())}`
 
+  const hoje       = new Date()
+  const diaSemana  = hoje.getDay() // 0=Dom, 1=Seg... 4=Qui, 5=Sex, 6=Sáb
+  const horaAtual  = hoje.getHours()
 
-  // ===== REGRA DE CORTE: quinta-feira às 18h =====
-  // Se hoje é quinta após 18h, sexta ou sábado/domingo,
-  // bloqueia TODA a semana atual e libera só a partir de segunda-feira
-  const diaSemana   = hoje.getDay() // 0=Dom, 1=Seg... 4=Qui, 5=Sex, 6=Sáb
-  const horaAtual   = hoje.getHours()
-
-  // Passou do corte se: é quinta após 18h, ou sexta, ou sábado, ou domingo
+  // ===== REGRA DE NEGÓCIO =====
+  // Pedidos aceitos: segunda (1) a quinta (4)
+  // Após quinta 18h, sexta, sábado e domingo: sem novos pedidos
   const passouCorte =
-    (diaSemana === 4 && horaAtual >= 18) || // quinta >= 18h
-    diaSemana === 5 ||                       // sexta
-    diaSemana === 6 ||                       // sábado
-    diaSemana === 0                          // domingo
+    (diaSemana === 4 && horaAtual >= 18) ||
+    diaSemana === 5 ||
+    diaSemana === 6 ||
+    diaSemana === 0
 
-  // Calcula o início da próxima semana (segunda-feira)
-  const proximaSegunda = new Date(hoje)
-  const diasAteSegunda = (8 - diaSemana) % 7 || 7
-  proximaSegunda.setDate(hoje.getDate() + diasAteSegunda)
+  // Próximo sábado disponível
+  const proximoSabado = new Date(hoje)
+  const diasAteSab = (6 - diaSemana + 7) % 7 || 7
+  proximoSabado.setDate(hoje.getDate() + diasAteSab)
 
-  // Calcula o fim da semana atual (domingo)
-  const fimSemanaAtual = new Date(hoje)
-  fimSemanaAtual.setDate(hoje.getDate() + (7 - diaSemana))
+  // Próximo domingo disponível
+  const proximoDomingo = new Date(hoje)
+  const diasAteDom = (7 - diaSemana) % 7 || 7
+  proximoDomingo.setDate(hoje.getDate() + diasAteDom)
 
-  // Data mínima: mínimo 2 dias de antecedência
-  const minData = new Date(hoje)
-  minData.setDate(minData.getDate() + 2)
+  // Se passou do corte, pula para o final de semana seguinte
+  const semanaOffset = passouCorte ? 7 : 0
+  const sabDisp = new Date(proximoSabado)
+  sabDisp.setDate(sabDisp.getDate() + semanaOffset)
+  const domDisp = new Date(proximoDomingo)
+  domDisp.setDate(domDisp.getDate() + semanaOffset)
 
-  // Se passou do corte, data mínima é a próxima segunda
-  const dataMinFinal = passouCorte && proximaSegunda > minData
-    ? proximaSegunda
-    : minData
+  const pad = n => String(n).padStart(2, '0')
+  const sabStr = `${sabDisp.getFullYear()}-${pad(sabDisp.getMonth()+1)}-${pad(sabDisp.getDate())}`
+  const domStr = `${domDisp.getFullYear()}-${pad(domDisp.getMonth()+1)}-${pad(domDisp.getDate())}`
 
-  const minDataStr = `${dataMinFinal.getFullYear()}-${pad(dataMinFinal.getMonth()+1)}-${pad(dataMinFinal.getDate())}`
-
-  // String do fim da semana atual para bloquear
-  const fimSemanaStr = `${fimSemanaAtual.getFullYear()}-${pad(fimSemanaAtual.getMonth()+1)}-${pad(fimSemanaAtual.getDate())}`
-
-
-
-
-
-    
   const primeiroDia = new Date(calAno, calMes, 1).getDay()
   const totalDias   = new Date(calAno, calMes + 1, 0).getDate()
   const grid        = document.getElementById('cal-grid-checkout')
@@ -177,25 +166,47 @@ const hoje        = new Date()
   // Dias do mês
   for (let dia = 1; dia <= totalDias; dia++) {
     const dataStr  = `${calAno}-${pad(calMes + 1)}-${pad(dia)}`
+    const dSemana  = new Date(calAno, calMes, dia).getDay()
+    const ehFimSem = dSemana === 6 || dSemana === 0 // só sáb e dom
+
     const cap      = capacidades.find(c => c.data === dataStr)
     const limite   = cap?.limite_pedidos ?? 3
     const ocupados = pedidosPorDia[dataStr] || 0
     const lotado   = ocupados >= limite
-// Bloqueia se é passado OU se passou do corte e a data é desta semana
-    const passado  = dataStr < minDataStr ||
-      (passouCorte && dataStr <= fimSemanaStr)
+
+    // Disponível apenas se: é sáb ou dom E está no range liberado
+    const disponivel = ehFimSem &&
+      (dataStr === sabStr || dataStr === domStr ||
+       dataStr > domStr)  &&
+      !lotado
 
     const div = document.createElement('div')
     div.textContent = dia
 
-    if (passado)                          div.className = 'cal-dia passado'
-    else if (lotado)                      div.className = 'cal-dia bloqueado'
-    else if (dataStr === dataSelecionada) div.className = 'cal-dia selecionado'
-    else if (dataStr === hojeStr)         div.className = 'cal-dia hoje'
-    else                                  div.className = 'cal-dia'
+    if (!ehFimSem) {
+      // Dias de semana — apenas visual, não clicável
+      div.className = 'cal-dia passado'
+      div.title = 'Entregas apenas aos sábados e domingos'
+    } else if (lotado) {
+      div.className = 'cal-dia bloqueado'
+      div.title = 'Data lotada'
+    } else if (dataStr < sabStr) {
+      div.className = 'cal-dia passado'
+      div.title = passouCorte
+        ? 'Pedidos encerrados para este final de semana'
+        : 'Data indisponível'
+    } else if (dataStr === dataSelecionada) {
+      div.className = 'cal-dia selecionado'
+    } else {
+      div.className = 'cal-dia'
+      div.style.fontWeight = '600'
+      div.style.borderColor = 'var(--cor-secundaria)'
+    }
 
-    if (!passado && !lotado) {
+    if (disponivel && dataStr !== dataSelecionada) {
       div.onclick = () => selecionarData(dataStr, dia)
+    } else if (disponivel && dataStr === dataSelecionada) {
+      div.className = 'cal-dia selecionado'
     }
 
     grid.appendChild(div)
@@ -258,7 +269,27 @@ function renderizarResumo() {
 // ===== IR PARA CONFIRMAÇÃO =====
 
 function irParaConfirmacao() {
-  // Validações
+  
+  // ===== VALIDA SE ESTÁ NO PERÍODO DE PEDIDOS =====
+  const hoje      = new Date()
+  const diaSemana = hoje.getDay()
+  const hora      = hoje.getHours()
+
+  const foraDoPeriodo =
+    (diaSemana === 4 && hora >= 18) ||
+    diaSemana === 5 ||
+    diaSemana === 6 ||
+    diaSemana === 0
+
+  if (foraDoPeriodo) {
+    mostrarToast(
+      'Pedidos encerrados. Aceitamos de segunda a quinta até 18h.',
+      'erro'
+    )
+    return
+  }
+
+  // Validações normais
   if (!dataSelecionada) {
     mostrarToast('Selecione a data de entrega', 'erro')
     return
