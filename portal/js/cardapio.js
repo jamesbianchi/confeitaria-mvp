@@ -164,6 +164,31 @@ function abrirModal(produtoId) {
   document.getElementById('modal-produto-preco-val').value   = p.preco_base
   document.getElementById('modal-qtd').textContent           = '1'
   document.getElementById('modal-personalizacao').value      = ''
+
+  // ===== FOTO NO MODAL =====
+  const fotoImg   = document.getElementById('modal-foto-img')
+  const fotoEmoji = document.getElementById('modal-foto-emoji')
+
+  if (p.foto_url) {
+    fotoImg.src             = p.foto_url
+    fotoImg.alt             = p.nome
+    fotoImg.style.display   = 'block'
+    fotoEmoji.style.display = 'none'
+  } else {
+    fotoImg.style.display   = 'none'
+    fotoEmoji.textContent   = getProdutoEmoji(p.nome)
+    fotoEmoji.style.display = 'flex'
+  }
+
+  // Badge de categoria
+  const badge = document.getElementById('modal-categoria-badge')
+  if (badge) {
+    badge.textContent = p.categoria === 'doces' ? '🍫 Doce' : '🥟 Salgado'
+  }
+
+  // Subtotal inicial
+  atualizarSubtotal(p.preco_base, 1)
+
   document.getElementById('modal-produto').classList.add('aberto')
 }
 
@@ -171,10 +196,23 @@ function fecharModal() {
   document.getElementById('modal-produto').classList.remove('aberto')
 }
 
+function atualizarSubtotal(preco, qtd) {
+  const subtotal = document.getElementById('modal-subtotal')
+  if (!subtotal) return
+  const total = preco * qtd
+  subtotal.textContent = qtd > 1
+    ? `${qtd} unidades = ${formatarMoeda(total)}`
+    : ''
+}
+
 function alterarQtd(delta) {
-  const el  = document.getElementById('modal-qtd')
-  const qtd = Math.max(1, parseInt(el.textContent) + delta)
+  const el    = document.getElementById('modal-qtd')
+  const preco = parseFloat(
+    document.getElementById('modal-produto-preco-val').value || 0
+  )
+  const qtd   = Math.max(1, parseInt(el.textContent) + delta)
   el.textContent = qtd
+  atualizarSubtotal(preco, qtd)
 }
 
 // ===== ADICIONAR AO CARRINHO =====
